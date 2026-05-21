@@ -1,32 +1,74 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-primary: hsl(168, 55%, 13%);
-  --color-primary-light: hsl(168, 45%, 24%);
-  --color-primary-dark: hsl(168, 65%, 8%);
-  
-  --color-accent: hsl(41, 78%, 54%);
-  --color-accent-hover: hsl(41, 85%, 46%);
-  --color-accent-light: hsl(41, 60%, 92%);
-  
-  --font-display: 'Outfit', sans-serif;
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  
+  /* Brand colors — HSL ramps (Refactoring UI: define your shades up front) */
+  --color-evergreen-50:  hsl(168, 30%, 96%);
+  --color-evergreen-100: hsl(168, 30%, 92%);
+  --color-evergreen-200: hsl(168, 28%, 82%);
+  --color-evergreen-300: hsl(168, 32%, 64%);
+  --color-evergreen-400: hsl(168, 38%, 44%);
+  --color-evergreen-500: hsl(168, 45%, 30%);
+  --color-evergreen-600: hsl(168, 50%, 22%);
+  --color-evergreen-700: hsl(168, 55%, 16%);
+  --color-evergreen-800: hsl(168, 60%, 11%);
+  --color-evergreen-900: hsl(168, 65%, 7%);
+  --color-evergreen-950: hsl(168, 70%, 4%);
+
+  --color-sunrise-50:  hsl(41, 92%, 96%);
+  --color-sunrise-100: hsl(41, 88%, 90%);
+  --color-sunrise-200: hsl(41, 84%, 80%);
+  --color-sunrise-300: hsl(41, 82%, 68%);
+  --color-sunrise-400: hsl(41, 80%, 58%);
+  --color-sunrise-500: hsl(41, 78%, 50%);
+  --color-sunrise-600: hsl(40, 82%, 42%);
+  --color-sunrise-700: hsl(38, 80%, 34%);
+  --color-sunrise-800: hsl(36, 76%, 26%);
+  --color-sunrise-900: hsl(34, 72%, 18%);
+
+  /* Mist — tinted neutral. Greys with a hint of the brand (RUI: greys don't have to be grey). */
+  --color-mist-50:  hsl(180, 14%, 97%);
+  --color-mist-100: hsl(180, 12%, 93%);
+  --color-mist-200: hsl(185, 10%, 86%);
+  --color-mist-300: hsl(190, 8%, 72%);
+  --color-mist-400: hsl(195, 8%, 56%);
+  --color-mist-500: hsl(200, 9%, 42%);
+  --color-mist-600: hsl(205, 12%, 30%);
+  --color-mist-700: hsl(210, 16%, 22%);
+  --color-mist-800: hsl(215, 20%, 14%);
+  --color-mist-900: hsl(220, 24%, 8%);
+
+  /* Legacy aliases — keep existing components working during refactor */
+  --color-primary: var(--color-evergreen-700);
+  --color-primary-light: var(--color-evergreen-600);
+  --color-primary-dark: var(--color-evergreen-900);
+  --color-accent: var(--color-sunrise-500);
+  --color-accent-hover: var(--color-sunrise-600);
+  --color-accent-light: var(--color-sunrise-100);
+
+  /* Typography — bound to next/font variables in layout.tsx */
+  --font-display: var(--font-outfit), system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-plus-jakarta), system-ui, -apple-system, sans-serif;
+
+  /* Two-layer shadows (RUI: shadows can have two parts — ambient + direct) */
+  --shadow-card:         0 1px 2px hsl(168 60% 8% / 0.04), 0 4px 12px hsl(168 60% 8% / 0.06);
+  --shadow-card-hover:   0 2px 4px hsl(168 60% 8% / 0.05), 0 12px 28px hsl(168 60% 8% / 0.10);
+  --shadow-elevated:     0 4px 8px hsl(168 60% 8% / 0.08), 0 24px 48px hsl(168 60% 8% / 0.14);
+  --shadow-glow-sunrise: 0 0 0 1px hsl(41 78% 50% / 0.20), 0 8px 24px hsl(41 78% 40% / 0.25);
+
   --animate-fade-in: fadeIn 0.4s ease-out forwards;
   --animate-pulse-glow: pulseGlow 2s infinite ease-in-out;
   --animate-bus-drive: busDrive 0.6s infinite ease;
 }
 
 :root {
-  --bg: #f5f8f7;
-  --text: #1b2624;
+  --bg: hsl(180, 14%, 97%);
+  --text: hsl(220, 24%, 12%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #090f0e;
-    --text: #f0f6f5;
+    --bg: hsl(168, 50%, 5%);
+    --text: hsl(180, 14%, 95%);
   }
 }
 
@@ -36,8 +78,10 @@ html, body {
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
-  line-height: 1.6;
+  line-height: 1.55;
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
@@ -49,23 +93,24 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
   color: var(--text);
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulseGlow {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 165, 45, 0.4); }
-  70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(220, 165, 45, 0); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 165, 45, 0); }
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0   hsl(41 78% 50% / 0.4); }
+  70%  { transform: scale(1.05); box-shadow: 0 0 0 8px hsl(41 78% 50% / 0);   }
+  100% { transform: scale(1);    box-shadow: 0 0 0 0   hsl(41 78% 50% / 0);   }
 }
 
 @keyframes busDrive {
-  0% { transform: translateX(0); }
-  50% { transform: translateX(5px); }
-  100% { transform: translateX(0); }
+  0%   { transform: translateX(-50%) translateY(0); }
+  50%  { transform: translateX(-50%) translateY(-2px); }
+  100% { transform: translateX(-50%) translateY(0); }
 }

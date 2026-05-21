@@ -17,100 +17,140 @@ export default function Hero({ onOpenBooking }: HeroProps) {
   };
 
   return (
-    <section className="relative bg-[url('/images/hero_banner.png')] bg-cover bg-center py-16 md:py-28 min-h-[85vh] flex items-center text-white">
-      {/* Hero overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0a1815]/95 via-[#0f342e]/75 to-black/55 z-1"></div>
-      
-      <div className="w-full max-w-7xl mx-auto px-6 relative z-10 grid grid-cols-1 lg:grid-cols-[1.25fr_0.75fr] items-center gap-12 lg:gap-16">
-        <div className="max-w-2xl animate-fade-in">
-          <div className="inline-flex items-center gap-2 bg-accent/15 border border-accent text-accent py-1.5 px-4 rounded-full text-xs font-bold tracking-wider uppercase mb-6">
-            <span className="text-sm select-none">🌸</span>
-            <span>Premium Rocky Mountain Shuttles</span>
-          </div>
-          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1] mb-6">
-            Banff → Lake Louise <br />
-            & Moraine Lake
+    <section className="relative isolate overflow-hidden">
+      <div className="absolute inset-0 -z-10 bg-[url('/images/hero_banner.png')] bg-cover bg-center" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-evergreen-950/95 via-evergreen-900/75 to-evergreen-950/60" />
+
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-6 py-20 md:py-28 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 lg:py-32">
+        {/* Left — narrative */}
+        <div className="max-w-2xl animate-fade-in text-white">
+          <span className="inline-flex items-center gap-2 rounded-full border border-sunrise-500/40 bg-sunrise-500/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-sunrise-300">
+            <span aria-hidden className="size-1.5 rounded-full bg-sunrise-400" />
+            Premium Rocky Mountain Shuttles
+          </span>
+
+          <h1 className="mt-6 font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
+            Banff → Lake Louise<br />
+            <span className="text-sunrise-400">& Moraine Lake</span>
           </h1>
-          <p className="text-sm sm:text-base md:text-lg text-white/85 leading-relaxed mb-8 max-w-xl">
-            Reliable, scenic, and premium daily transit connections. Beat the parking crowds and travel in absolute comfort on our state-of-the-art shuttle coaches.
+
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-mist-200 sm:text-lg">
+            Reliable, scenic, premium daily transit. Beat the parking crowds and travel in
+            absolute comfort on our state-of-the-art shuttle coaches.
           </p>
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-white bg-white/8 py-2 px-4 rounded-full border border-white/8">
-              <span className="text-sm">✨</span>
-              <span>Sunrise Access (4:30 AM)</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-white bg-white/8 py-2 px-4 rounded-full border border-white/8">
-              <span className="text-sm">⏱️</span>
-              <span>Buses Depart on Time</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-white bg-white/8 py-2 px-4 rounded-full border border-white/8">
-              <span className="text-sm">🏔️</span>
-              <span>Reserved Seating</span>
-            </div>
-          </div>
+
+          <ul className="mt-8 flex flex-wrap gap-2 text-sm text-mist-100">
+            <li className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5">
+              <span aria-hidden>✨</span>
+              <span className="font-medium">Sunrise Access (4:30 AM)</span>
+            </li>
+            <li className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5">
+              <span aria-hidden>⏱️</span>
+              <span className="font-medium">Buses depart on time</span>
+            </li>
+            <li className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5">
+              <span aria-hidden>🏔️</span>
+              <span className="font-medium">Reserved seating</span>
+            </li>
+          </ul>
         </div>
 
-        <div className="w-full animate-fade-in delay-100">
-          <form onSubmit={handleSubmit} className="bg-slate-950/75 backdrop-blur-xl border border-white/10 p-6 sm:p-8 rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
-            <h3 className="font-display text-xl sm:text-2xl font-bold text-white mb-6 relative pb-3">
-              Reserve Your Shuttle
-              <span className="absolute bottom-0 left-0 w-10 h-[3px] bg-accent rounded" />
-            </h3>
-            
-            <div className="mb-5 flex flex-col gap-2">
-              <label htmlFor="route-select" className="text-[10px] font-bold text-white/70 uppercase tracking-wider">Select Route / Service</label>
-              <select 
-                id="route-select" 
-                value={selectedRoute} 
-                onChange={(e) => setSelectedRoute(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/15 text-white text-sm outline-none focus:border-accent focus:bg-black/60 focus:ring-3 focus:ring-accent/20 transition-all duration-200"
+        {/* Right — booking card */}
+        <div className="w-full animate-fade-in [animation-delay:120ms]">
+          <form
+            onSubmit={handleSubmit}
+            className="relative overflow-hidden rounded-3xl bg-evergreen-900 ring-1 ring-evergreen-700/60 shadow-[var(--shadow-elevated)]"
+          >
+            <div className="h-1.5 w-full bg-gradient-to-r from-sunrise-500 via-sunrise-400 to-sunrise-600" />
+
+            <div className="p-6 sm:p-8">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sunrise-300">
+                Book your shuttle
+              </p>
+              <h2 className="mt-1.5 font-display text-2xl font-bold text-white sm:text-3xl">
+                Reserve in 30&nbsp;seconds
+              </h2>
+
+              <div className="mt-7 space-y-5">
+                <Field label="Route / Service" htmlFor="route-select">
+                  <select
+                    id="route-select"
+                    value={selectedRoute}
+                    onChange={(e) => setSelectedRoute(e.target.value)}
+                    className="w-full rounded-xl border border-evergreen-700 bg-evergreen-950/60 px-4 py-3.5 text-base font-medium text-white outline-none transition focus:border-sunrise-400 focus:bg-evergreen-950 focus:ring-2 focus:ring-sunrise-400/30"
+                  >
+                    <option value="sunrise-express" className="bg-evergreen-900 text-white">Sunrise Express — 4:30 AM</option>
+                    <option value="daytime-circuit" className="bg-evergreen-900 text-white">Daytime Circuit — 7:00 AM to 5:20 PM</option>
+                    <option value="evening-return" className="bg-evergreen-900 text-white">Evening Return — 6:00 PM</option>
+                  </select>
+                </Field>
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <Field label="Travel date" htmlFor="date-input">
+                    <input
+                      type="date"
+                      id="date-input"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="w-full rounded-xl border border-evergreen-700 bg-evergreen-950/60 px-4 py-3.5 text-base font-medium text-white outline-none transition [color-scheme:dark] focus:border-sunrise-400 focus:bg-evergreen-950 focus:ring-2 focus:ring-sunrise-400/30"
+                      min="2026-05-03"
+                    />
+                  </Field>
+
+                  <Field label="Passengers" htmlFor="passengers-input">
+                    <select
+                      id="passengers-input"
+                      value={passengers}
+                      onChange={(e) => setPassengers(parseInt(e.target.value))}
+                      className="w-full rounded-xl border border-evergreen-700 bg-evergreen-950/60 px-4 py-3.5 text-base font-medium text-white outline-none transition focus:border-sunrise-400 focus:bg-evergreen-950 focus:ring-2 focus:ring-sunrise-400/30"
+                    >
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <option key={n} value={n} className="bg-evergreen-900 text-white">
+                          {n === 5 ? '5+ Passengers' : `${n} Passenger${n > 1 ? 's' : ''}`}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sunrise-500 px-6 py-4 font-display text-base font-bold text-evergreen-950 shadow-[var(--shadow-glow-sunrise)] transition hover:bg-sunrise-400 focus:outline-none focus:ring-2 focus:ring-sunrise-300 focus:ring-offset-2 focus:ring-offset-evergreen-900"
               >
-                <option value="sunrise-express" className="bg-[#101917] text-white">Sunrise Express (Premium) — 4:30 AM</option>
-                <option value="daytime-circuit" className="bg-[#101917] text-white">Daytime Circuit (Repeating) — 7:00 AM to 5:20 PM</option>
-                <option value="evening-return" className="bg-[#101917] text-white">Evening Return (Banff Bound) — 6:00 PM</option>
-              </select>
+                Find availability &amp; book
+                <span aria-hidden>→</span>
+              </button>
+
+              <p className="mt-4 text-center text-xs text-mist-300">
+                Please arrive 10 minutes early — buses depart strictly on schedule.
+              </p>
             </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 mb-5">
-              <div className="flex-1 flex flex-col gap-2">
-                <label htmlFor="date-input" className="text-[10px] font-bold text-white/70 uppercase tracking-wider">Travel Date</label>
-                <input 
-                  type="date" 
-                  id="date-input" 
-                  value={date} 
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/15 text-white text-sm outline-none focus:border-accent focus:bg-black/60 focus:ring-3 focus:ring-accent/20 transition-all duration-200 [color-scheme:dark]" 
-                  min="2026-05-03"
-                />
-              </div>
-
-              <div className="flex-1 flex flex-col gap-2">
-                <label htmlFor="passengers-input" className="text-[10px] font-bold text-white/70 uppercase tracking-wider">Passengers</label>
-                <select 
-                  id="passengers-input" 
-                  value={passengers} 
-                  onChange={(e) => setPassengers(parseInt(e.target.value))}
-                  className="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/15 text-white text-sm outline-none focus:border-accent focus:bg-black/60 focus:ring-3 focus:ring-accent/20 transition-all duration-200"
-                >
-                  <option value={1} className="bg-[#101917] text-white">1 Passenger</option>
-                  <option value={2} className="bg-[#101917] text-white">2 Passengers</option>
-                  <option value={3} className="bg-[#101917] text-white">3 Passengers</option>
-                  <option value={4} className="bg-[#101917] text-white">4 Passengers</option>
-                  <option value={5} className="bg-[#101917] text-white">5+ Passengers</option>
-                </select>
-              </div>
-            </div>
-
-            <button type="submit" className="w-full py-4 bg-accent hover:bg-accent-hover text-primary-dark font-bold text-sm rounded-lg flex items-center justify-center gap-2 hover:scale-[1.01] transition-all duration-200 shadow-md mt-2 cursor-pointer">
-              <span>Find Availability & Book</span>
-              <span className="text-base">→</span>
-            </button>
-            <p className="text-[11px] text-white/50 text-center mt-4">
-              * Please arrive 10 minutes early; buses depart strictly on schedule.
-            </p>
           </form>
         </div>
       </div>
     </section>
+  );
+}
+
+function Field({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={htmlFor}
+        className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-300"
+      >
+        {label}
+      </label>
+      {children}
+    </div>
   );
 }
