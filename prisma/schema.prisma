@@ -1,0 +1,219 @@
+// RockFlower Travels — shuttle service booking engine schema
+// See AGENTS.md for product context (Banff / Lake Louise / Moraine circuits).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Reference data ────────────────────────────────────────────────────────────
+
+enum RouteKind {
+  SUNRISE_EXPRESS   // Premium 4:30 AM Banff → Moraine (isolated inventory)
+  DAYTIME_CIRCUIT   // Samson → LL Lakeshore → Moraine → Samson loop
+  EVENING_RETURN    // 6:00 PM LL Lakeshore → Banff
+}
+
+model Stop {
+  id        String        @id @default(cuid())
+  code      String        @unique          // "BANFF", "SAMSON", "LL_LAKESHORE", "MORAINE"
+  name      String
+  lat       Float?
+  lng       Float?
+  notes     String?
+
+  legsFrom  LegTemplate[] @relation("LegFromStop")
+  legsTo    LegTemplate[] @relation("LegToStop")
+}
+
+model Route {
+  id          String             @id @default(cuid())
+  kind        RouteKind          @unique
+  displayName String
+  isPremium   Boolean            @default(false)
+  description String?
+
+  templates   ScheduleTemplate[]
+}
+
+// A `ScheduleTemplate` is one daily departure pattern.
+// Sunrise has 1 template, Daytime has 5 (one per circuit), Evening has 1.
+model ScheduleTemplate {
+  id          String        @id @default(cuid())
+  routeId     String
+  route       Route         @relation(fields: [routeId], references: [id])
+
+  label       String                                  // "Circuit 1 (07:00)", "Sunrise Express"
+  sortOrder   Int
+  activeFrom  DateTime      @default(now())
+  activeUntil DateTime?
+
+  legs        LegTemplate[]
+  trips       Trip[]
+
+  @@index([routeId, sortOrder])
+}
+
+// One ordered leg within a schedule template. `bookable=false` for positioning/deadhead
+// segments (e.g. Sunrise's Moraine→LL→Samson repositioning).
+model LegTemplate {
+  id          String           @id @default(cuid())
+  templateId  String
+  template    ScheduleTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  sequence    Int                                     // 1, 2, 3 within the template
+  fromStopId  String
+  fromStop    Stop             @relation("LegFromStop", fields: [fromStopId], references: [id])
+  toStopId    String
+  toStop      Stop             @relation("LegToStop",   fields: [toStopId],   references: [id])
+
+  // Times stored as minutes-from-midnight so the template is timezone-agnostic.
+  // The Trip materializer combines serviceDate + offset in America/Edmonton to produce a real timestamp.
+  departMin   Int
+  arriveMin   Int
+
+  bookable    Boolean          @default(true)         // false = positioning leg, no seats sold
+  priceCents  Int                                     // CAD cents, pre-GST. Placeholder pricing.
+
+  tripLegs    TripLeg[]
+}
+
+// ─── Operational instances (materialized per day) ──────────────────────────────
+
+model Vehicle {
+  id           String  @id @default(cuid())
+  code         String  @unique                        // "BUS-01" .. "BUS-04"
+  seatCapacity Int     @default(25)
+  active       Boolean @default(true)
+}
+
+model Trip {
+  id          String           @id @default(cuid())
+  templateId  String
+  template    ScheduleTemplate @relation(fields: [templateId], references: [id])
+  serviceDate DateTime         @db.Date               // calendar day in America/Edmonton
+
+  legs        TripLeg[]
+
+  @@unique([templateId, serviceDate])
+  @@index([serviceDate])
+}
+
+// Live inventory per leg. `seatsBooked` includes pending holds; expired holds decrement it.
+// Premium isolation: a TripLeg belongs to exactly one Trip → Template → Route,
+// so a Sunrise booking can never touch Daytime inventory.
+model TripLeg {
+  id            String       @id @default(cuid())
+  tripId        String
+  trip          Trip         @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  legTemplateId String
+  legTemplate   LegTemplate  @relation(fields: [legTemplateId], references: [id])
+
+  departAt      DateTime                              // materialized timestamp (UTC)
+  arriveAt      DateTime
+  seatsTotal    Int          @default(25)             // 1 bus default; admin can scale to 50/75/100
+  seatsBooked   Int          @default(0)
+
+  bookingLegs   BookingLeg[]
+
+  @@unique([tripId, legTemplateId])
+  @@index([departAt])
+}
+
+// ─── Users, bookings, payments ─────────────────────────────────────────────────
+
+model User {
+  id          String    @id @default(cuid())
+  clerkUserId String?   @unique                       // null for guest-only riders
+  email       String    @unique
+  firstName   String?
+  lastName    String?
+  phone       String?
+  createdAt   DateTime  @default(now())
+
+  bookings    Booking[]
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED
+  REFUNDED
+  EXPIRED
+}
+
+model Booking {
+  id             String        @id @default(cuid())
+  reference      String        @unique               // "RF-7K2P9X"
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id])
+
+  // Guest checkout fields — populated when userId is null, or mirrored for contact.
+  guestEmail     String?
+  guestFirstName String?
+  guestLastName  String?
+  guestPhone     String?
+
+  status         BookingStatus @default(PENDING_PAYMENT)
+  holdExpiresAt  DateTime?                            // 15-min seat hold; null once CONFIRMED
+
+  // Pricing snapshot in CAD cents, taken at hold time so later price changes don't shift the rider.
+  subtotalCents  Int
+  gstCents       Int                                  // 5% GST added on top of subtotal
+  totalCents     Int
+  currency       String        @default("CAD")
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  legs           BookingLeg[]
+  payment        Payment?
+
+  @@index([status, holdExpiresAt])
+  @@index([userId])
+}
+
+model BookingLeg {
+  id             String  @id @default(cuid())
+  bookingId      String
+  booking        Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  tripLegId      String
+  tripLeg        TripLeg @relation(fields: [tripLegId], references: [id])
+
+  passengers     Int                                  // seats reserved on this leg
+  unitPriceCents Int                                  // snapshot of LegTemplate.priceCents at hold time
+
+  @@unique([bookingId, tripLegId])
+  @@index([tripLegId])
+}
+
+enum PaymentStatus {
+  REQUIRES_PAYMENT
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id                      String        @id @default(cuid())
+  bookingId               String        @unique
+  booking                 Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  stripeCheckoutSessionId String?       @unique
+  stripePaymentIntentId   String?       @unique
+  stripeCustomerId        String?
+
+  amountSubtotalCents     Int
+  gstCents                Int
+  amountTotalCents        Int
+  currency                String        @default("CAD")
+  status                  PaymentStatus @default(REQUIRES_PAYMENT)
+
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+}
