@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+
+reviews:
+  profile: "assertive"
+  auto_review: true
+  path_instructions:
+    - path: "prisma/schema.prisma"
+      instructions: |
+        - Ensure PostgreSQL relational database schemas are strictly typed.
+        - Verify foreign key relations, indexes, and model structures adhere to Prisma best practices.
+
+    - path: "**/*.ts"
+      instructions: |
+        - Ensure strictly typed code is used. Avoid the use of `any` types.
+        - Ensure proper use of Next.js 16 conventions and deprecation warnings.
+        - Keep Server Actions and API routes strictly separate from Client Components.
+
+    - path: "**/*.tsx"
+      instructions: |
+        - Never use raw CSS; strictly use Tailwind 4.0 utility classes.
+        - Adhere to Shadcn UI design patterns.
+        - Ensure proper React hook usage and Client Component directives ('use client') where appropriate.
+        - Keep Server Actions and API routes strictly separate from Client Components.
+
+    - path: "package.json"
+      instructions: |
+        - Verify that no new external libraries or dependencies are introduced unless explicitly approved.
+
+    - path: "**/*"
+      instructions: |
+        - Ensure checkout flow with Stripe API handles the 5% local GST correctly.
+        - Keep premium runs (e.g., 4:30 AM Sunrise Express) isolated from standard loops in checkout or scheduling logic.
