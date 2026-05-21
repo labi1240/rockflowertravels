@@ -19,7 +19,9 @@ export default function Hero({ onOpenBooking }: HeroProps) {
   return (
     <section className="relative isolate overflow-hidden">
       <div className="absolute inset-0 -z-10 bg-[url('/images/hero_banner.png')] bg-cover bg-center" />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-evergreen-950/95 via-evergreen-900/75 to-evergreen-950/60" />
+      {/* Two-stop overlay: heavier on the left where the headline sits, lighter toward the booking card */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-evergreen-950/95 via-evergreen-950/70 to-evergreen-900/50" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-evergreen-950/40 via-transparent to-evergreen-950/30" />
 
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-6 py-20 md:py-28 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 lg:py-32">
         {/* Left — narrative */}
@@ -29,9 +31,8 @@ export default function Hero({ onOpenBooking }: HeroProps) {
             Premium Rocky Mountain Shuttles
           </span>
 
-          <h1 className="mt-6 font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
-            Banff → Lake Louise<br />
-            <span className="text-sunrise-400">& Moraine Lake</span>
+          <h1 className="mt-6 font-display text-4xl font-extrabold leading-[1.02] tracking-tight text-balance text-white sm:text-5xl lg:text-6xl">
+            Banff to <span className="text-sunrise-400">Lake Louise</span> &amp; <span className="text-sunrise-400">Moraine Lake</span>
           </h1>
 
           <p className="mt-6 max-w-xl text-base leading-relaxed text-mist-200 sm:text-lg">

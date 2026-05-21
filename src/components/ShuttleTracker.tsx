@@ -7,15 +7,30 @@ interface TrackerState {
   activeService: string;
   status: 'en-route' | 'stopped' | 'resting' | 'closed';
   segment: string;
-  progressPercent: number; // 0 to 100
+  progressPercent: number;
   fromStation: string;
   toStation: string;
   etaMins: number;
 }
 
+const minutesToTimeString = (mins: number): string => {
+  const hours = Math.floor(mins / 60);
+  const m = mins % 60;
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 === 0 ? 12 : hours % 12;
+  const displayMinutes = m < 10 ? `0${m}` : m;
+  return `${displayHours}:${displayMinutes} ${ampm}`;
+};
+
+const getMountainTimeMinutes = (): number => {
+  const edmontonDate = new Date().toLocaleString('en-US', { timeZone: 'America/Edmonton' });
+  const localDate = new Date(edmontonDate);
+  return localDate.getHours() * 60 + localDate.getMinutes();
+};
+
 export default function ShuttleTracker() {
   const [isLive, setIsLive] = useState<boolean>(true);
-  const [simMinutes, setSimMinutes] = useState<number>(540); // Default to 9:00 AM (9 * 60)
+  const [simMinutes, setSimMinutes] = useState<number>(540);
   const [trackerState, setTrackerState] = useState<TrackerState>({
     timeString: '9:00 AM',
     activeService: 'Daytime Circuit (Circuit 2)',
@@ -27,215 +42,117 @@ export default function ShuttleTracker() {
     etaMins: 15,
   });
 
-  // Convert minutes of the day (e.g. 270 = 4:30 AM) to a nice 12-hour AM/PM string
-  const minutesToTimeString = (mins: number): string => {
-    const hours = Math.floor(mins / 60);
-    const m = mins % 60;
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 === 0 ? 12 : hours % 12;
-    const displayMinutes = m < 10 ? `0${m}` : m;
-    return `${displayHours}:${displayMinutes} ${ampm}`;
-  };
-
-  // Convert Date object to Mountain Time minutes of the day
-  const getMountainTimeMinutes = (): number => {
-    const edmontonDate = new Date().toLocaleString('en-US', { timeZone: 'America/Edmonton' });
-    const localDate = new Date(edmontonDate);
-    return localDate.getHours() * 60 + localDate.getMinutes();
-  };
-
-  // Run the core calculation engine to locate shuttles at a specific time of day (minutes since midnight)
   const calculateShuttlePosition = useCallback((totalMinutes: number) => {
     const timeString = minutesToTimeString(totalMinutes);
-    
-    // Default closed state
-    let activeService = 'No Active Shuttles';
-    let status: 'en-route' | 'stopped' | 'resting' | 'closed' = 'closed';
-    let segment = 'Depot / Overnight Parking';
+    let activeService = 'No active shuttles';
+    let status: TrackerState['status'] = 'closed';
+    let segment = 'Depot / overnight parking';
     let progressPercent = 0;
     let fromStation = 'Banff Depot';
     let toStation = 'Banff Depot';
     let etaMins = 0;
 
-    // A) Sunrise Express: 4:30 AM (270 mins) to 6:50 AM (410 mins)
     if (totalMinutes >= 270 && totalMinutes < 410) {
       activeService = 'Sunrise Express (Premium)';
-      
-      if (totalMinutes >= 270 && totalMinutes < 360) {
-        // Banff -> Moraine Lake (4:30 AM - 6:00 AM, 90 mins)
+      if (totalMinutes < 360) {
         status = 'en-route';
-        fromStation = 'Banff';
-        toStation = 'Moraine Lake';
-        const elapsed = totalMinutes - 270;
-        progressPercent = Math.min(100, Math.floor((elapsed / 90) * 100));
+        fromStation = 'Banff'; toStation = 'Moraine Lake';
+        progressPercent = Math.min(100, Math.floor(((totalMinutes - 270) / 90) * 100));
         segment = 'Banff to Moraine Lake';
         etaMins = 360 - totalMinutes;
-      } else if (totalMinutes >= 360 && totalMinutes < 370) {
-        // Stopped at Moraine (6:00 AM - 6:10 AM, 10 mins)
+      } else if (totalMinutes < 370) {
         status = 'stopped';
-        fromStation = 'Moraine Lake';
-        toStation = 'Lake Louise Lakeshore';
+        fromStation = 'Moraine Lake'; toStation = 'Lake Louise Lakeshore';
         progressPercent = 100;
-        segment = 'Unloading & Boarding at Moraine Lake';
+        segment = 'Unloading & boarding at Moraine Lake';
         etaMins = 370 - totalMinutes;
-      } else if (totalMinutes >= 370 && totalMinutes < 395) {
-        // Moraine -> Lakeshore (6:10 AM - 6:35 AM, 25 mins)
+      } else if (totalMinutes < 395) {
         status = 'en-route';
-        fromStation = 'Moraine Lake';
-        toStation = 'Lake Louise Lakeshore';
-        const elapsed = totalMinutes - 370;
-        progressPercent = Math.min(100, Math.floor((elapsed / 25) * 100));
+        fromStation = 'Moraine Lake'; toStation = 'Lake Louise Lakeshore';
+        progressPercent = Math.min(100, Math.floor(((totalMinutes - 370) / 25) * 100));
         segment = 'Positioning: Moraine Lake to Lake Louise Lakeshore';
         etaMins = 395 - totalMinutes;
-      } else if (totalMinutes >= 395 && totalMinutes < 410) {
-        // Lakeshore -> Samson Mall (6:35 AM - 6:50 AM, 15 mins)
+      } else {
         status = 'en-route';
-        fromStation = 'Lake Louise Lakeshore';
-        toStation = 'Samson Mall';
-        const elapsed = totalMinutes - 395;
-        progressPercent = Math.min(100, Math.floor((elapsed / 15) * 100));
+        fromStation = 'Lake Louise Lakeshore'; toStation = 'Samson Mall';
+        progressPercent = Math.min(100, Math.floor(((totalMinutes - 395) / 15) * 100));
         segment = 'Positioning: Lake Louise Lakeshore to Samson Mall';
         etaMins = 410 - totalMinutes;
       }
-    }
-    // Rest before daytime circuit (6:50 AM - 7:00 AM, 10 mins)
-    else if (totalMinutes >= 410 && totalMinutes < 420) {
+    } else if (totalMinutes >= 410 && totalMinutes < 420) {
       activeService = 'Preparing for Daytime Circuit';
       status = 'resting';
-      fromStation = 'Samson Mall';
-      toStation = 'Lake Louise Lakeshore';
-      progressPercent = 0;
-      segment = 'Layover / Preparing bus at Samson Mall';
+      fromStation = 'Samson Mall'; toStation = 'Lake Louise Lakeshore';
+      segment = 'Layover / preparing bus at Samson Mall';
       etaMins = 420 - totalMinutes;
-    }
-    // B) Daytime Circuit (repeating)
-    // Samson Mall -> Lake Louise Lakeshore -> Moraine Lake -> Samson Mall
-    else if (totalMinutes >= 420 && totalMinutes < 1040) {
-      // 7:00 AM (420 mins) to 5:20 PM (1040 mins)
+    } else if (totalMinutes >= 420 && totalMinutes < 1040) {
       const circuits = [
-        { start: 420, label: 'Daytime Circuit 1' }, // 7:00 AM
-        { start: 540, label: 'Daytime Circuit 2' }, // 9:00 AM
-        { start: 660, label: 'Daytime Circuit 3' }, // 11:00 AM
-        { start: 810, label: 'Daytime Circuit 4' }, // 1:30 PM (810 mins)
-        { start: 930, label: 'Daytime Circuit 5' }  // 3:30 PM (930 mins)
+        { start: 420, label: 'Daytime Circuit 1' },
+        { start: 540, label: 'Daytime Circuit 2' },
+        { start: 660, label: 'Daytime Circuit 3' },
+        { start: 810, label: 'Daytime Circuit 4' },
+        { start: 930, label: 'Daytime Circuit 5' },
       ];
-
-      // Find which circuit we are currently in or resting after
       let activeCirc = circuits[0];
-      for (let i = 0; i < circuits.length; i++) {
-        if (totalMinutes >= circuits[i].start) {
-          activeCirc = circuits[i];
-        }
-      }
-
+      for (const c of circuits) if (totalMinutes >= c.start) activeCirc = c;
       activeService = activeCirc.label;
-      const start = activeCirc.start;
-
-      // Circuit duration structure (110 mins total):
-      // 0 - 15 mins: Samson -> LL Lakeshore (15 mins)
-      // 15 - 40 mins: Lakeshore -> Moraine (25 mins)
-      // 40 - 110 mins: Moraine -> Samson Mall (70 mins)
-      const relativeMin = totalMinutes - start;
-
-      if (relativeMin >= 0 && relativeMin < 15) {
+      const relativeMin = totalMinutes - activeCirc.start;
+      if (relativeMin < 15) {
         status = 'en-route';
-        fromStation = 'Samson Mall';
-        toStation = 'Lake Louise Lakeshore';
+        fromStation = 'Samson Mall'; toStation = 'Lake Louise Lakeshore';
         progressPercent = Math.min(100, Math.floor((relativeMin / 15) * 100));
         segment = 'Samson Mall to Lake Louise Lakeshore';
         etaMins = 15 - relativeMin;
-      } else if (relativeMin >= 15 && relativeMin < 40) {
+      } else if (relativeMin < 40) {
         status = 'en-route';
-        fromStation = 'Lake Louise Lakeshore';
-        toStation = 'Moraine Lake';
-        const elapsed = relativeMin - 15;
-        progressPercent = Math.min(100, Math.floor((elapsed / 25) * 100));
+        fromStation = 'Lake Louise Lakeshore'; toStation = 'Moraine Lake';
+        progressPercent = Math.min(100, Math.floor(((relativeMin - 15) / 25) * 100));
         segment = 'Lake Louise Lakeshore to Moraine Lake';
         etaMins = 40 - relativeMin;
-      } else if (relativeMin >= 40 && relativeMin < 110) {
+      } else if (relativeMin < 110) {
         status = 'en-route';
-        fromStation = 'Moraine Lake';
-        toStation = 'Samson Mall';
-        const elapsed = relativeMin - 40;
-        progressPercent = Math.min(100, Math.floor((elapsed / 70) * 100));
-        segment = 'Moraine Lake to Samson Mall (Village)';
+        fromStation = 'Moraine Lake'; toStation = 'Samson Mall';
+        progressPercent = Math.min(100, Math.floor(((relativeMin - 40) / 70) * 100));
+        segment = 'Moraine Lake to Samson Mall';
         etaMins = 110 - relativeMin;
       } else {
-        // Layover/Rest period between circuits
         status = 'resting';
-        fromStation = 'Samson Mall';
-        toStation = 'Samson Mall';
+        fromStation = 'Samson Mall'; toStation = 'Lake Louise Lakeshore';
         progressPercent = 100;
-        segment = 'Layover / Rest Break at Samson Mall';
-        
-        // Find next circuit start
-        const curIndex = circuits.findIndex(c => c.start === start);
-        if (curIndex < circuits.length - 1) {
-          const nextStart = circuits[curIndex + 1].start;
-          etaMins = nextStart - totalMinutes;
-          toStation = 'Lake Louise Lakeshore';
-        } else {
-          // Last circuit ends, preparing for evening return
-          etaMins = 1080 - totalMinutes; // Preparing for 6:00 PM (1080)
-          toStation = 'Lake Louise Lakeshore';
-        }
+        segment = 'Layover at Samson Mall';
+        const curIndex = circuits.findIndex((c) => c.start === activeCirc.start);
+        etaMins = curIndex < circuits.length - 1 ? circuits[curIndex + 1].start - totalMinutes : 1080 - totalMinutes;
       }
-    }
-    // Preparing for Evening Return: 5:20 PM (1040 mins) to 6:00 PM (1080 mins)
-    else if (totalMinutes >= 1040 && totalMinutes < 1080) {
+    } else if (totalMinutes >= 1040 && totalMinutes < 1080) {
       activeService = 'Preparing for Evening Return';
       status = 'resting';
-      fromStation = 'Samson Mall';
-      toStation = 'Lake Louise Lakeshore';
+      fromStation = 'Samson Mall'; toStation = 'Lake Louise Lakeshore';
       progressPercent = Math.min(100, Math.floor(((totalMinutes - 1040) / 40) * 100));
-      segment = 'Positioning/Resting: Samson Mall to Lake Louise Lakeshore';
+      segment = 'Positioning: Samson Mall to Lake Louise Lakeshore';
       etaMins = 1080 - totalMinutes;
-    }
-    // C) Evening Return: 6:00 PM (1080 mins) to 7:15 PM (1155 mins)
-    else if (totalMinutes >= 1080 && totalMinutes < 1155) {
+    } else if (totalMinutes >= 1080 && totalMinutes < 1155) {
       activeService = 'Evening Return';
       status = 'en-route';
-      fromStation = 'Lake Louise Lakeshore';
-      toStation = 'Banff';
-      const elapsed = totalMinutes - 1080;
-      progressPercent = Math.min(100, Math.floor((elapsed / 75) * 100));
-      segment = 'Lake Louise Lakeshore to Banff (Evening Return)';
+      fromStation = 'Lake Louise Lakeshore'; toStation = 'Banff';
+      progressPercent = Math.min(100, Math.floor(((totalMinutes - 1080) / 75) * 100));
+      segment = 'Lake Louise Lakeshore to Banff';
       etaMins = 1155 - totalMinutes;
-    }
-    // Night depot: After 7:15 PM (1155 mins) or Before 4:30 AM (270 mins)
-    else {
-      activeService = 'Closed / Depot';
+    } else {
+      activeService = 'Service closed';
       status = 'closed';
-      segment = 'Services ended for the day. Buses parked in depot.';
-      fromStation = 'Banff Depot';
-      toStation = 'Banff Depot';
-      progressPercent = 0;
-      etaMins = totalMinutes < 270 ? 270 - totalMinutes : (1440 - totalMinutes) + 270;
+      segment = 'Services ended for the day';
+      etaMins = totalMinutes < 270 ? 270 - totalMinutes : 1440 - totalMinutes + 270;
     }
 
-    setTrackerState({
-      timeString,
-      activeService,
-      status,
-      segment,
-      progressPercent,
-      fromStation,
-      toStation,
-      etaMins
-    });
+    setTrackerState({ timeString, activeService, status, segment, progressPercent, fromStation, toStation, etaMins });
   }, []);
 
-  // Run calculation on effect
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (isLive) {
-      const updateTracker = () => {
-        const liveMinutes = getMountainTimeMinutes();
-        calculateShuttlePosition(liveMinutes);
-      };
-
+      const updateTracker = () => calculateShuttlePosition(getMountainTimeMinutes());
       updateTracker();
-      const interval = setInterval(updateTracker, 30000); // Update every 30 seconds
+      const interval = setInterval(updateTracker, 30000);
       return () => clearInterval(interval);
     } else {
       calculateShuttlePosition(simMinutes);
@@ -243,155 +160,155 @@ export default function ShuttleTracker() {
   }, [isLive, simMinutes, calculateShuttlePosition]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSimMinutes(parseInt(e.target.value));
-  };
-
-  const getStatusBadgeStyles = (status: string) => {
-    switch (status) {
-      case 'en-route': return 'bg-amber-100 dark:bg-amber-950/30 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50';
-      case 'stopped': return 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50';
-      case 'resting': return 'bg-blue-100 dark:bg-blue-950/30 text-blue-800 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50';
-      default: return 'bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800';
-    }
+  const statusMeta: Record<TrackerState['status'], { label: string; tone: string }> = {
+    'en-route': { label: 'En route',  tone: 'bg-sunrise-100 text-sunrise-700 dark:bg-sunrise-500/15 dark:text-sunrise-300' },
+    stopped:    { label: 'Boarding',  tone: 'bg-evergreen-100 text-evergreen-700 dark:bg-evergreen-500/15 dark:text-evergreen-300' },
+    resting:    { label: 'Layover',   tone: 'bg-mist-100 text-mist-700 dark:bg-mist-700/30 dark:text-mist-200' },
+    closed:     { label: 'Closed',    tone: 'bg-mist-100 text-mist-500 dark:bg-mist-800/40 dark:text-mist-400' },
   };
 
   return (
-    <section id="tracker" className="py-16 max-w-7xl mx-auto px-6">
-      <div className="mb-12">
-        <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-center text-slate-900 dark:text-white mb-4">
-          Live Shuttle Tracker & Simulator
-        </h2>
-        <p className="text-slate-500 dark:text-slate-400 text-center max-w-2xl mx-auto text-sm sm:text-base">
-          Monitor active shuttles in real-time or use the slider to simulate bus positions throughout the day.
+    <section id="tracker" className="mx-auto max-w-7xl px-6 py-24">
+      <header className="mx-auto max-w-2xl text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-evergreen-500 dark:text-sunrise-400">
+          Live network
         </p>
-      </div>
+        <h2 className="mt-2 font-display text-4xl font-extrabold tracking-tight text-mist-900 dark:text-white sm:text-5xl">
+          Where's the shuttle right now?
+        </h2>
+        <p className="mt-4 text-base text-mist-500 dark:text-mist-300">
+          Live position in Mountain Time, or drag the slider to simulate any moment of the day.
+        </p>
+      </header>
 
-      <div className="p-6 sm:p-8 bg-white dark:bg-[#101917] border border-slate-200 dark:border-slate-800 rounded-[20px] shadow-md max-w-5xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 pb-6 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex flex-col gap-1.5">
-            <span className="inline-flex items-center gap-2 text-[10px] font-extrabold tracking-widest px-3 py-1 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-fit select-none">
-              <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse' : 'bg-accent shadow-[0_0_8px_var(--color-accent)]'}`} />
-              {isLive ? 'LIVE' : 'SIMULATION'}
+      <div className="mx-auto mt-12 max-w-5xl overflow-hidden rounded-3xl border border-mist-200 bg-white shadow-[var(--shadow-card)] dark:border-evergreen-700/40 dark:bg-evergreen-900">
+        {/* Header strip */}
+        <div className="flex flex-col gap-5 border-b border-mist-200 p-6 dark:border-evergreen-700/40 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+          <div>
+            <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-mist-500 dark:text-mist-300">
+              <span className={`size-2 rounded-full ${isLive ? 'bg-emerald-500 shadow-[0_0_0_3px_hsl(160_84%_50%/0.25)] animate-pulse' : 'bg-sunrise-400 shadow-[0_0_0_3px_hsl(41_80%_50%/0.25)]'}`} />
+              {isLive ? 'Live' : 'Simulation'}
             </span>
-            <h3 className="font-display text-3xl font-extrabold text-slate-900 dark:text-white leading-none mt-1">
+            <div className="mt-2 font-display text-4xl font-extrabold tabular-nums text-mist-900 dark:text-white sm:text-5xl">
               {trackerState.timeString}
-            </h3>
+            </div>
           </div>
 
-          {/* Toggle controls */}
-          <div className="flex bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
-            <button 
-              onClick={() => setIsLive(true)} 
-              className={`px-4 py-2 text-xs font-bold rounded-md transition-all duration-200 cursor-pointer ${isLive ? 'bg-white dark:bg-[#101917] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
-            >
-              Live Mountain Time
-            </button>
-            <button 
-              onClick={() => setIsLive(false)} 
-              className={`px-4 py-2 text-xs font-bold rounded-md transition-all duration-200 cursor-pointer ${!isLive ? 'bg-white dark:bg-[#101917] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
-            >
-              Time Travel Slider
-            </button>
+          <div className="inline-flex rounded-xl border border-mist-200 bg-mist-50 p-1 dark:border-evergreen-700/40 dark:bg-evergreen-950/40">
+            <ToggleButton active={isLive} onClick={() => setIsLive(true)}>Live time</ToggleButton>
+            <ToggleButton active={!isLive} onClick={() => setIsLive(false)}>Simulator</ToggleButton>
           </div>
         </div>
 
-        {/* Simulator Slider Container */}
+        {/* Simulator */}
         {!isLive && (
-          <div className="bg-slate-50 dark:bg-slate-900/25 border border-slate-200 dark:border-slate-800 p-6 rounded-xl mb-8 animate-fade-in">
-            <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-3 tracking-wider">
-              <span>Sunrise Express (4:30 AM)</span>
-              <span>Noon (12:00 PM)</span>
-              <span>Evening Return (6:00 PM)</span>
-              <span>Night Depot (8:00 PM)</span>
+          <div className="border-b border-mist-200 px-6 py-5 dark:border-evergreen-700/40 sm:px-7">
+            <div className="mb-3 flex justify-between text-[11px] font-semibold uppercase tracking-[0.12em] text-mist-400 dark:text-mist-500">
+              <span>4:30 AM</span>
+              <span>Noon</span>
+              <span>6:00 PM</span>
+              <span>8:00 PM</span>
             </div>
-            <input 
-              type="range" 
-              min={240} // 4:00 AM
-              max={1230} // 8:30 PM
+            <input
+              type="range"
+              min={240}
+              max={1230}
               step={5}
               value={simMinutes}
-              onChange={handleSliderChange}
-              className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer mb-4 accent-accent"
+              onChange={(e) => setSimMinutes(parseInt(e.target.value))}
+              className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-mist-200 accent-sunrise-500 dark:bg-evergreen-800"
             />
-            <div className="text-sm text-slate-500 dark:text-slate-400 text-center">
-              Simulating Time: <strong className="text-primary dark:text-accent font-bold">{minutesToTimeString(simMinutes)}</strong>
+            <div className="mt-3 text-center text-sm text-mist-500 dark:text-mist-300">
+              Simulating <strong className="font-display text-mist-900 dark:text-white">{minutesToTimeString(simMinutes)}</strong>
             </div>
           </div>
         )}
 
-        {/* Visual Progress Bar (The Route Segment) */}
-        <div className="my-12 relative px-4">
-          <div className="flex justify-between relative z-10 pointer-events-none">
-            <div className="flex flex-col items-start gap-2">
-              <span className="w-3.5 h-3.5 rounded-full bg-white dark:bg-[#101917] border-3 border-primary dark:border-accent shadow-sm" />
-              <span className="font-display text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">{trackerState.fromStation}</span>
+        {/* Progress segment */}
+        <div className="px-6 py-10 dark:px-7">
+          <div className="relative mx-auto max-w-xl">
+            <div className="flex justify-between text-xs">
+              <Stop label={trackerState.fromStation} align="left" />
+              <Stop label={trackerState.toStation} align="right" />
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <span className="w-3.5 h-3.5 rounded-full bg-white dark:bg-[#101917] border-3 border-primary dark:border-accent shadow-sm" />
-              <span className="font-display text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">{trackerState.toStation}</span>
+            <div className="relative mt-3">
+              <div className="absolute inset-x-3 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-mist-200 dark:bg-evergreen-800" />
+              <div
+                className="absolute inset-y-1/2 left-3 h-1.5 -translate-y-1/2 rounded-full bg-sunrise-500 transition-[width] duration-500 ease-out"
+                style={{ width: `calc(${trackerState.status === 'closed' ? 0 : trackerState.progressPercent}% - 1.5rem * ${trackerState.progressPercent / 100})` }}
+              />
+              {trackerState.status !== 'closed' && (
+                <div
+                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl transition-[left] duration-500 ease-out"
+                  style={{
+                    left: `calc(0.75rem + (100% - 1.5rem) * ${trackerState.progressPercent / 100})`,
+                    animation: trackerState.status === 'en-route' ? 'busDrive 0.6s infinite ease' : 'none',
+                  }}
+                  aria-hidden
+                >
+                  🚌
+                </div>
+              )}
             </div>
-          </div>
-
-          <div className="absolute top-[5px] left-8 right-8 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full z-0">
-            {/* The fill line */}
-            <div 
-              className="h-full bg-accent rounded-full transition-all duration-500 ease-out" 
-              style={{ width: `${trackerState.status === 'closed' ? 0 : trackerState.progressPercent}%` }}
-            />
-            
-            {/* The moving bus icon */}
-            {trackerState.status !== 'closed' && (
-              <div 
-                className="absolute -top-3.5 transform -translate-x-1/2 text-2xl transition-all duration-500 ease-out z-25 select-none"
-                style={{ 
-                  left: `${trackerState.progressPercent}%`,
-                  animation: trackerState.status === 'en-route' ? 'busDrive 0.6s infinite ease' : 'none' 
-                }}
-              >
-                🚌
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Telemetry Data Details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12">
-          <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200/50 dark:border-slate-800 p-5 rounded-xl flex flex-col gap-2">
-            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Service Route</span>
-            <span className="font-display text-sm font-bold text-slate-900 dark:text-white leading-tight">{trackerState.activeService}</span>
-          </div>
-
-          <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200/50 dark:border-slate-800 p-5 rounded-xl flex flex-col gap-2">
-            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Current Sector</span>
-            <span className="font-display text-sm font-bold text-slate-900 dark:text-white leading-tight">{trackerState.segment}</span>
-          </div>
-
-          <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200/50 dark:border-slate-800 p-5 rounded-xl flex flex-col gap-2">
-            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Transit Status</span>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide w-fit mt-1 ${getStatusBadgeStyles(trackerState.status)}`}>
-              {trackerState.status === 'en-route' && 'En Route'}
-              {trackerState.status === 'stopped' && 'Boarding'}
-              {trackerState.status === 'resting' && 'Layover'}
-              {trackerState.status === 'closed' && 'Closed'}
+        {/* Telemetry */}
+        <div className="grid grid-cols-1 gap-px border-t border-mist-200 bg-mist-200 dark:border-evergreen-700/40 dark:bg-evergreen-700/40 sm:grid-cols-2 lg:grid-cols-4">
+          <Telemetry label="Active service" value={trackerState.activeService} />
+          <Telemetry label="Current sector" value={trackerState.segment} />
+          <div className="bg-white p-5 dark:bg-evergreen-900">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500 dark:text-mist-400">Status</p>
+            <span className={`mt-2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusMeta[trackerState.status].tone}`}>
+              {statusMeta[trackerState.status].label}
             </span>
           </div>
-
-          <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200/50 dark:border-slate-800 p-5 rounded-xl flex flex-col gap-2">
-            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              {trackerState.status === 'closed' ? 'Next Departure In' : 'Est. Destination Arrival'}
-            </span>
-            <span className="font-display text-sm font-bold text-amber-600 dark:text-accent leading-tight">
-              {trackerState.status === 'closed' 
+          <div className="bg-white p-5 dark:bg-evergreen-900">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500 dark:text-mist-400">
+              {trackerState.status === 'closed' ? 'Next departure in' : 'Arrives in'}
+            </p>
+            <p className="mt-2 font-display text-2xl font-bold text-sunrise-600 tabular-nums dark:text-sunrise-400">
+              {trackerState.status === 'closed'
                 ? `${Math.floor(trackerState.etaMins / 60)}h ${trackerState.etaMins % 60}m`
-                : trackerState.status === 'resting'
-                  ? `Departs in ${trackerState.etaMins} mins`
-                  : `${trackerState.etaMins} mins`
-              }
-            </span>
+                : `${trackerState.etaMins} min`}
+            </p>
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function ToggleButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+        active
+          ? 'bg-white text-mist-900 shadow-sm dark:bg-evergreen-700 dark:text-white'
+          : 'text-mist-500 hover:text-mist-900 dark:text-mist-400 dark:hover:text-white'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Stop({ label, align }: { label: string; align: 'left' | 'right' }) {
+  return (
+    <div className={`flex flex-col gap-1.5 ${align === 'right' ? 'items-end' : 'items-start'}`}>
+      <span className="size-3 rounded-full border-2 border-evergreen-700 bg-white dark:border-sunrise-400 dark:bg-evergreen-900" />
+      <span className="font-display text-xs font-semibold text-mist-700 dark:text-white">{label}</span>
+    </div>
+  );
+}
+
+function Telemetry({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-white p-5 dark:bg-evergreen-900">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500 dark:text-mist-400">{label}</p>
+      <p className="mt-2 font-display text-sm font-semibold leading-snug text-mist-900 dark:text-white">{value}</p>
+    </div>
   );
 }

@@ -1,88 +1,83 @@
 import React from 'react';
 
+const QUICK_LINKS = [
+  { href: '#schedule', label: 'Schedules' },
+  { href: '#tracker', label: 'Live shuttle tracker' },
+  { href: '#map', label: 'Route map' },
+  { href: '#booking', label: 'Book shuttle' },
+];
+
 export default function Footer() {
   return (
-    <footer className="bg-[#0b1311] text-white pt-20 mt-auto border-t border-white/5">
-      <div className="w-full max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-12 pb-12">
-        <div className="flex flex-col gap-5">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl animate-pulse-glow select-none">🌸</span>
-            <div className="flex flex-col">
-              <span className="font-display text-2xl font-extrabold tracking-tight text-white leading-none">RockFlower</span>
-              <span className="text-[10px] font-bold text-white/50 tracking-widest uppercase mt-0.5">Travels Inc.</span>
-            </div>
+    <footer className="mt-auto border-t border-evergreen-700/40 bg-evergreen-950 text-white">
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-12 px-6 pb-12 pt-20 lg:grid-cols-[1.3fr_0.7fr_0.7fr]">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <span aria-hidden className="text-2xl">🌸</span>
+            <span className="flex flex-col leading-none">
+              <span className="font-display text-xl font-extrabold text-white">RockFlower</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-300">Travels Inc.</span>
+            </span>
           </div>
-          <p className="text-[15px] text-slate-400 max-w-md leading-relaxed">
-            Providing premium transportation services across the Canadian Rockies. Experience Banff, Lake Louise, and Moraine Lake with our luxurious shuttle service.
+          <p className="mt-5 max-w-md text-sm leading-relaxed text-mist-300">
+            Premium transportation across the Canadian Rockies. Experience Banff, Lake Louise,
+            and Moraine Lake in comfort on our luxury shuttle coaches.
           </p>
-          <div className="flex flex-col gap-1 text-xs text-slate-500">
-            <p><strong>Prepared:</strong> May 03, 2026</p>
-            <p><strong>Document State:</strong> Shuttle Schedule Draft (v1.2)</p>
-          </div>
+          <dl className="mt-6 grid max-w-md grid-cols-2 gap-x-6 gap-y-2 text-xs text-mist-400">
+            <div>
+              <dt className="font-semibold uppercase tracking-[0.12em] text-mist-500">Prepared</dt>
+              <dd className="mt-0.5 text-mist-300">May 03, 2026</dd>
+            </div>
+            <div>
+              <dt className="font-semibold uppercase tracking-[0.12em] text-mist-500">Document</dt>
+              <dd className="mt-0.5 text-mist-300">Schedule Draft v1.2</dd>
+            </div>
+          </dl>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
-          <div className="flex flex-col">
-            <h4 className="text-base font-bold mb-5 text-white relative pb-2">
-              Quick Links
-              <span className="absolute bottom-0 left-0 w-8 h-[2px] bg-accent" />
-            </h4>
-            <ul className="flex flex-col gap-3">
-              <li>
-                <a href="#schedule" className="text-sm text-slate-400 hover:text-accent transition-all duration-150 hover:pl-1">
-                  Schedules
-                </a>
-              </li>
-              <li>
-                <a href="#tracker" className="text-sm text-slate-400 hover:text-accent transition-all duration-150 hover:pl-1">
-                  Live Shuttle Tracker
-                </a>
-              </li>
-              <li>
-                <a href="#map" className="text-sm text-slate-400 hover:text-accent transition-all duration-150 hover:pl-1">
-                  Route Map
-                </a>
-              </li>
-              <li>
-                <a href="#booking" className="text-sm text-slate-400 hover:text-accent transition-all duration-150 hover:pl-1">
-                  Book Shuttle
-                </a>
-              </li>
-            </ul>
-          </div>
+        <FooterColumn title="Quick links">
+          {QUICK_LINKS.map((l) => (
+            <FooterLink key={l.href} href={l.href}>{l.label}</FooterLink>
+          ))}
+        </FooterColumn>
 
-          <div className="flex flex-col">
-            <h4 className="text-base font-bold mb-5 text-white relative pb-2">
-              Contact & Support
-              <span className="absolute bottom-0 left-0 w-8 h-[2px] bg-accent" />
-            </h4>
-            <ul className="flex flex-col gap-3">
-              <li>
-                <a href="mailto:info@rockflowertravels.ca" className="text-sm text-slate-400 hover:text-accent transition-all duration-150">
-                  info@rockflowertravels.ca
-                </a>
-              </li>
-              <li>
-                <a href="tel:+14035550199" className="text-sm text-slate-400 hover:text-accent transition-all duration-150">
-                  +1 (403) 555-0199
-                </a>
-              </li>
-              <li>
-                <span className="text-sm text-slate-500">Banff Visitor Center</span>
-              </li>
-            </ul>
-          </div>
-        </div>
+        <FooterColumn title="Contact">
+          <FooterLink href="mailto:info@rockflowertravels.ca">info@rockflowertravels.ca</FooterLink>
+          <FooterLink href="tel:+14035550199">+1 (403) 555-0199</FooterLink>
+          <li className="text-sm text-mist-400">Banff Visitor Center</li>
+        </FooterColumn>
       </div>
 
-      <div className="bg-[#060b09] py-6 border-t border-white/5 text-xs text-slate-500">
-        <div className="w-full max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
-          <p>&copy; {new Date().getFullYear()} RockFlower Travels Inc. All rights reserved.</p>
-          <p className="italic font-light">
-            Buses depart strictly on time. Please arrive 10 minutes prior to departure.
-          </p>
+      <div className="border-t border-evergreen-700/40 bg-evergreen-950">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-6 py-5 text-xs text-mist-400 md:flex-row md:items-center md:justify-between">
+          <p>© {new Date().getFullYear()} RockFlower Travels Inc. All rights reserved.</p>
+          <p className="italic">Buses depart strictly on time — arrive 10 minutes early.</p>
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterColumn({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h4 className="font-display text-sm font-semibold uppercase tracking-[0.14em] text-mist-400">
+        {title}
+      </h4>
+      <ul className="mt-4 space-y-2.5">{children}</ul>
+    </div>
+  );
+}
+
+function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <li>
+      <a
+        href={href}
+        className="text-sm text-mist-200 transition hover:text-sunrise-300"
+      >
+        {children}
+      </a>
+    </li>
   );
 }
