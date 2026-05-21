@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface TrackerState {
   timeString: string;
@@ -45,7 +45,7 @@ export default function ShuttleTracker() {
   };
 
   // Run the core calculation engine to locate shuttles at a specific time of day (minutes since midnight)
-  const calculateShuttlePosition = (totalMinutes: number) => {
+  const calculateShuttlePosition = useCallback((totalMinutes: number) => {
     const timeString = minutesToTimeString(totalMinutes);
     
     // Default closed state
@@ -223,9 +223,10 @@ export default function ShuttleTracker() {
       toStation,
       etaMins
     });
-  };
+  }, []);
 
   // Run calculation on effect
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (isLive) {
       const updateTracker = () => {
@@ -239,51 +240,56 @@ export default function ShuttleTracker() {
     } else {
       calculateShuttlePosition(simMinutes);
     }
-  }, [isLive, simMinutes]);
+  }, [isLive, simMinutes, calculateShuttlePosition]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSimMinutes(parseInt(e.target.value));
   };
 
-  const getStatusBadgeClass = (status: string) => {
+  const getStatusBadgeStyles = (status: string) => {
     switch (status) {
-      case 'en-route': return 'badge-premium';
-      case 'stopped': return 'badge-info';
-      case 'resting': return 'badge-info';
-      default: return 'badge-closed';
+      case 'en-route': return 'bg-amber-100 dark:bg-amber-950/30 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50';
+      case 'stopped': return 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50';
+      case 'resting': return 'bg-blue-100 dark:bg-blue-950/30 text-blue-800 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50';
+      default: return 'bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800';
     }
   };
 
   return (
-    <section id="tracker" className="tracker-section container">
-      <div className="section-header">
-        <h2 className="section-title text-center">Live Shuttle Tracker & Simulator</h2>
-        <p className="section-subtitle text-center">
+    <section id="tracker" className="py-16 max-w-7xl mx-auto px-6">
+      <div className="mb-12">
+        <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-center text-slate-900 dark:text-white mb-4">
+          Live Shuttle Tracker & Simulator
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 text-center max-w-2xl mx-auto text-sm sm:text-base">
           Monitor active shuttles in real-time or use the slider to simulate bus positions throughout the day.
         </p>
       </div>
 
-      <div className="tracker-layout card">
-        <div className="tracker-header-row">
-          <div className="time-display-container">
-            <span className="live-badge-tracker">
-              <span className={`pulse-dot ${isLive ? 'active-pulse' : 'inactive-pulse'}`}></span>
+      <div className="p-6 sm:p-8 bg-white dark:bg-[#101917] border border-slate-200 dark:border-slate-800 rounded-[20px] shadow-md max-w-5xl mx-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 pb-6 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex flex-col gap-1.5">
+            <span className="inline-flex items-center gap-2 text-[10px] font-extrabold tracking-widest px-3 py-1 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-fit select-none">
+              <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse' : 'bg-accent shadow-[0_0_8px_var(--color-accent)]'}`} />
               {isLive ? 'LIVE' : 'SIMULATION'}
             </span>
-            <h3 className="tracker-time-text">{trackerState.timeString}</h3>
+            <h3 className="font-display text-3xl font-extrabold text-slate-900 dark:text-white leading-none mt-1">
+              {trackerState.timeString}
+            </h3>
           </div>
 
           {/* Toggle controls */}
-          <div className="tracker-toggle-controls">
+          <div className="flex bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
             <button 
               onClick={() => setIsLive(true)} 
-              className={`toggle-btn ${isLive ? 'active-toggle' : ''}`}
+              className={`px-4 py-2 text-xs font-bold rounded-md transition-all duration-200 cursor-pointer ${isLive ? 'bg-white dark:bg-[#101917] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
             >
               Live Mountain Time
             </button>
             <button 
               onClick={() => setIsLive(false)} 
-              className={`toggle-btn ${!isLive ? 'active-toggle' : ''}`}
+              className={`px-4 py-2 text-xs font-bold rounded-md transition-all duration-200 cursor-pointer ${!isLive ? 'bg-white dark:bg-[#101917] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
             >
               Time Travel Slider
             </button>
@@ -292,8 +298,8 @@ export default function ShuttleTracker() {
 
         {/* Simulator Slider Container */}
         {!isLive && (
-          <div className="slider-container animate-fade-in">
-            <div className="slider-labels">
+          <div className="bg-slate-50 dark:bg-slate-900/25 border border-slate-200 dark:border-slate-800 p-6 rounded-xl mb-8 animate-fade-in">
+            <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-3 tracking-wider">
               <span>Sunrise Express (4:30 AM)</span>
               <span>Noon (12:00 PM)</span>
               <span>Evening Return (6:00 PM)</span>
@@ -306,38 +312,38 @@ export default function ShuttleTracker() {
               step={5}
               value={simMinutes}
               onChange={handleSliderChange}
-              className="time-slider"
+              className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer mb-4 accent-accent"
             />
-            <div className="slider-current-label">
-              Simulating Time: <strong>{minutesToTimeString(simMinutes)}</strong>
+            <div className="text-sm text-slate-500 dark:text-slate-400 text-center">
+              Simulating Time: <strong className="text-primary dark:text-accent font-bold">{minutesToTimeString(simMinutes)}</strong>
             </div>
           </div>
         )}
 
         {/* Visual Progress Bar (The Route Segment) */}
-        <div className="visual-progress-container">
-          <div className="station-nodes-row">
-            <div className="progress-station">
-              <span className="station-dot-tracker"></span>
-              <span className="station-name-tracker">{trackerState.fromStation}</span>
+        <div className="my-12 relative px-4">
+          <div className="flex justify-between relative z-10 pointer-events-none">
+            <div className="flex flex-col items-start gap-2">
+              <span className="w-3.5 h-3.5 rounded-full bg-white dark:bg-[#101917] border-3 border-primary dark:border-accent shadow-sm" />
+              <span className="font-display text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">{trackerState.fromStation}</span>
             </div>
-            <div className="progress-station">
-              <span className="station-dot-tracker"></span>
-              <span className="station-name-tracker">{trackerState.toStation}</span>
+            <div className="flex flex-col items-end gap-2">
+              <span className="w-3.5 h-3.5 rounded-full bg-white dark:bg-[#101917] border-3 border-primary dark:border-accent shadow-sm" />
+              <span className="font-display text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">{trackerState.toStation}</span>
             </div>
           </div>
 
-          <div className="progress-track-bar">
+          <div className="absolute top-[5px] left-8 right-8 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full z-0">
             {/* The fill line */}
             <div 
-              className="progress-track-fill" 
+              className="h-full bg-accent rounded-full transition-all duration-500 ease-out" 
               style={{ width: `${trackerState.status === 'closed' ? 0 : trackerState.progressPercent}%` }}
-            ></div>
+            />
             
             {/* The moving bus icon */}
             {trackerState.status !== 'closed' && (
               <div 
-                className="moving-bus-marker"
+                className="absolute -top-3.5 transform -translate-x-1/2 text-2xl transition-all duration-500 ease-out z-25 select-none"
                 style={{ 
                   left: `${trackerState.progressPercent}%`,
                   animation: trackerState.status === 'en-route' ? 'busDrive 0.6s infinite ease' : 'none' 
@@ -350,32 +356,32 @@ export default function ShuttleTracker() {
         </div>
 
         {/* Telemetry Data Details */}
-        <div className="telemetry-grid">
-          <div className="telemetry-card">
-            <span className="telemetry-lbl">Active Service Route</span>
-            <span className="telemetry-val">{trackerState.activeService}</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12">
+          <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200/50 dark:border-slate-800 p-5 rounded-xl flex flex-col gap-2">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Service Route</span>
+            <span className="font-display text-sm font-bold text-slate-900 dark:text-white leading-tight">{trackerState.activeService}</span>
           </div>
 
-          <div className="telemetry-card">
-            <span className="telemetry-lbl">Current Sector</span>
-            <span className="telemetry-val">{trackerState.segment}</span>
+          <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200/50 dark:border-slate-800 p-5 rounded-xl flex flex-col gap-2">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Current Sector</span>
+            <span className="font-display text-sm font-bold text-slate-900 dark:text-white leading-tight">{trackerState.segment}</span>
           </div>
 
-          <div className="telemetry-card">
-            <span className="telemetry-lbl">Transit Status</span>
-            <span className={`badge ${getStatusBadgeClass(trackerState.status)} telemetry-badge`}>
+          <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200/50 dark:border-slate-800 p-5 rounded-xl flex flex-col gap-2">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Transit Status</span>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide w-fit mt-1 ${getStatusBadgeStyles(trackerState.status)}`}>
               {trackerState.status === 'en-route' && 'En Route'}
-              {trackerState.status === 'stopped' && 'Boarding / Unloading'}
-              {trackerState.status === 'resting' && 'Layover Rest'}
-              {trackerState.status === 'closed' && 'Service Closed'}
+              {trackerState.status === 'stopped' && 'Boarding'}
+              {trackerState.status === 'resting' && 'Layover'}
+              {trackerState.status === 'closed' && 'Closed'}
             </span>
           </div>
 
-          <div className="telemetry-card">
-            <span className="telemetry-lbl">
+          <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200/50 dark:border-slate-800 p-5 rounded-xl flex flex-col gap-2">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               {trackerState.status === 'closed' ? 'Next Departure In' : 'Est. Destination Arrival'}
             </span>
-            <span className="telemetry-val timer-val">
+            <span className="font-display text-sm font-bold text-amber-600 dark:text-accent leading-tight">
               {trackerState.status === 'closed' 
                 ? `${Math.floor(trackerState.etaMins / 60)}h ${trackerState.etaMins % 60}m`
                 : trackerState.status === 'resting'

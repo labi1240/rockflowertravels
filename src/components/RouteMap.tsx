@@ -58,47 +58,65 @@ export default function RouteMap() {
   };
 
   return (
-    <section id="map" className="map-section container">
-      <div className="section-header">
-        <h2 className="section-title text-center">Interactive Route Map</h2>
-        <p className="section-subtitle text-center">
+    <section id="map" className="py-16 max-w-7xl mx-auto px-6">
+      <div className="mb-12">
+        <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-center text-slate-900 dark:text-white mb-4">
+          Interactive Route Map
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 text-center max-w-2xl mx-auto text-sm sm:text-base">
           Explore our routes connecting Banff, Samson Mall, Lake Louise Lakeshore, and Moraine Lake. Click a stop to view details.
         </p>
       </div>
 
-      <div className="map-layout">
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
         {/* SVG Route Map */}
-        <div className="map-container card">
+        <div className="w-full flex-1 bg-white dark:bg-[#101917] border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg p-6 flex flex-col gap-6">
           {/* Route Map Controls */}
-          <div className="map-controls">
+          <div className="flex flex-wrap gap-2">
             <button 
               onClick={() => setSelectedRouteFilter('all')} 
-              className={`map-control-btn ${selectedRouteFilter === 'all' ? 'active' : ''}`}
+              className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition-all duration-150 cursor-pointer ${
+                selectedRouteFilter === 'all'
+                  ? 'bg-primary border-primary text-white dark:bg-accent dark:border-accent dark:text-primary-dark shadow-md'
+                  : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
             >
               All Routes
             </button>
             <button 
               onClick={() => setSelectedRouteFilter('sunrise')} 
-              className={`map-control-btn ${selectedRouteFilter === 'sunrise' ? 'active' : ''}`}
+              className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition-all duration-150 cursor-pointer ${
+                selectedRouteFilter === 'sunrise'
+                  ? 'bg-primary border-primary text-white dark:bg-accent dark:border-accent dark:text-primary-dark shadow-md'
+                  : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
             >
               🌅 Sunrise Express
             </button>
             <button 
               onClick={() => setSelectedRouteFilter('daytime')} 
-              className={`map-control-btn ${selectedRouteFilter === 'daytime' ? 'active' : ''}`}
+              className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition-all duration-150 cursor-pointer ${
+                selectedRouteFilter === 'daytime'
+                  ? 'bg-primary border-primary text-white dark:bg-accent dark:border-accent dark:text-primary-dark shadow-md'
+                  : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
             >
               ☀️ Daytime Circuit
             </button>
             <button 
               onClick={() => setSelectedRouteFilter('evening')} 
-              className={`map-control-btn ${selectedRouteFilter === 'evening' ? 'active' : ''}`}
+              className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition-all duration-150 cursor-pointer ${
+                selectedRouteFilter === 'evening'
+                  ? 'bg-primary border-primary text-white dark:bg-accent dark:border-accent dark:text-primary-dark shadow-md'
+                  : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
             >
               🌇 Evening Return
             </button>
           </div>
 
-          <div className="svg-wrapper">
-            <svg viewBox="0 0 600 400" className="route-svg">
+          <div className="relative w-full aspect-[3/2] bg-slate-100 dark:bg-[#0c1312] border border-slate-100 dark:border-slate-800 rounded-lg overflow-hidden flex items-center justify-center p-2">
+            <svg viewBox="0 0 600 400" className="w-full h-full select-none">
               {/* Definitions for gradients and markers */}
               <defs>
                 <linearGradient id="sunriseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -119,9 +137,9 @@ export default function RouteMap() {
               </defs>
 
               {/* Mountains representation in SVG for background aesthetics */}
-              <path d="M 50 350 L 150 200 L 250 350 Z" fill="rgba(15, 52, 46, 0.05)" />
-              <path d="M 200 350 L 320 180 L 440 350 Z" fill="rgba(15, 52, 46, 0.03)" />
-              <path d="M 380 350 L 480 220 L 580 350 Z" fill="rgba(15, 52, 46, 0.05)" />
+              <path d="M 50 350 L 150 200 L 250 350 Z" className="fill-[#0f342e]/[0.05] dark:fill-white/[0.02]" />
+              <path d="M 200 350 L 320 180 L 440 350 Z" className="fill-[#0f342e]/[0.03] dark:fill-white/[0.01]" />
+              <path d="M 380 350 L 480 220 L 580 350 Z" className="fill-[#0f342e]/[0.05] dark:fill-white/[0.02]" />
 
               {/* Connecting Paths */}
               
@@ -132,7 +150,7 @@ export default function RouteMap() {
                 stroke="url(#sunriseGrad)" 
                 strokeWidth={selectedRouteFilter === 'sunrise' || selectedRouteFilter === 'all' ? 4 : 1}
                 strokeDasharray="8 6"
-                className={`svg-path ${selectedRouteFilter === 'sunrise' ? 'active-path' : ''} ${selectedRouteFilter !== 'sunrise' && selectedRouteFilter !== 'all' ? 'dimmed-path' : ''}`}
+                className={`transition-all duration-300 ${selectedRouteFilter === 'sunrise' ? 'opacity-100' : ''} ${selectedRouteFilter !== 'sunrise' && selectedRouteFilter !== 'all' ? 'opacity-15' : 'opacity-80'}`}
               />
               <path 
                 d="M 480 120 Q 430 90 380 120" 
@@ -140,7 +158,7 @@ export default function RouteMap() {
                 stroke="url(#sunriseGrad)" 
                 strokeWidth={selectedRouteFilter === 'sunrise' || selectedRouteFilter === 'all' ? 4 : 1}
                 strokeDasharray="6 4"
-                className={`svg-path ${selectedRouteFilter === 'sunrise' ? 'active-path' : ''} ${selectedRouteFilter !== 'sunrise' && selectedRouteFilter !== 'all' ? 'dimmed-path' : ''}`}
+                className={`transition-all duration-300 ${selectedRouteFilter === 'sunrise' ? 'opacity-100' : ''} ${selectedRouteFilter !== 'sunrise' && selectedRouteFilter !== 'all' ? 'opacity-15' : 'opacity-80'}`}
               />
               <path 
                 d="M 380 120 Q 330 150 280 220" 
@@ -148,7 +166,7 @@ export default function RouteMap() {
                 stroke="url(#sunriseGrad)" 
                 strokeWidth={selectedRouteFilter === 'sunrise' || selectedRouteFilter === 'all' ? 4 : 1}
                 strokeDasharray="6 4"
-                className={`svg-path ${selectedRouteFilter === 'sunrise' ? 'active-path' : ''} ${selectedRouteFilter !== 'sunrise' && selectedRouteFilter !== 'all' ? 'dimmed-path' : ''}`}
+                className={`transition-all duration-300 ${selectedRouteFilter === 'sunrise' ? 'opacity-100' : ''} ${selectedRouteFilter !== 'sunrise' && selectedRouteFilter !== 'all' ? 'opacity-15' : 'opacity-80'}`}
               />
 
               {/* B) Daytime Circuit: Samson Mall -> LL Lakeshore -> Moraine Lake -> Samson Mall */}
@@ -158,7 +176,7 @@ export default function RouteMap() {
                 fill="none" 
                 stroke="url(#daytimeGrad)" 
                 strokeWidth={selectedRouteFilter === 'daytime' || selectedRouteFilter === 'all' ? 4 : 1}
-                className={`svg-path ${selectedRouteFilter === 'daytime' ? 'active-path' : ''} ${selectedRouteFilter !== 'daytime' && selectedRouteFilter !== 'all' ? 'dimmed-path' : ''}`}
+                className={`transition-all duration-300 ${selectedRouteFilter === 'daytime' ? 'opacity-100' : ''} ${selectedRouteFilter !== 'daytime' && selectedRouteFilter !== 'all' ? 'opacity-15' : 'opacity-80'}`}
               />
               {/* Lakeshore -> Moraine */}
               <path 
@@ -166,7 +184,7 @@ export default function RouteMap() {
                 fill="none" 
                 stroke="url(#daytimeGrad)" 
                 strokeWidth={selectedRouteFilter === 'daytime' || selectedRouteFilter === 'all' ? 4 : 1}
-                className={`svg-path ${selectedRouteFilter === 'daytime' ? 'active-path' : ''} ${selectedRouteFilter !== 'daytime' && selectedRouteFilter !== 'all' ? 'dimmed-path' : ''}`}
+                className={`transition-all duration-300 ${selectedRouteFilter === 'daytime' ? 'opacity-100' : ''} ${selectedRouteFilter !== 'daytime' && selectedRouteFilter !== 'all' ? 'opacity-15' : 'opacity-80'}`}
               />
               {/* Moraine -> Samson */}
               <path 
@@ -174,7 +192,7 @@ export default function RouteMap() {
                 fill="none" 
                 stroke="url(#daytimeGrad)" 
                 strokeWidth={selectedRouteFilter === 'daytime' || selectedRouteFilter === 'all' ? 4 : 1}
-                className={`svg-path ${selectedRouteFilter === 'daytime' ? 'active-path' : ''} ${selectedRouteFilter !== 'daytime' && selectedRouteFilter !== 'all' ? 'dimmed-path' : ''}`}
+                className={`transition-all duration-300 ${selectedRouteFilter === 'daytime' ? 'opacity-100' : ''} ${selectedRouteFilter !== 'daytime' && selectedRouteFilter !== 'all' ? 'opacity-15' : 'opacity-80'}`}
               />
 
               {/* C) Evening Return: Lake Louise Lakeshore -> Banff */}
@@ -184,93 +202,138 @@ export default function RouteMap() {
                 stroke="url(#eveningGrad)" 
                 strokeWidth={selectedRouteFilter === 'evening' || selectedRouteFilter === 'all' ? 4 : 1}
                 strokeDasharray="10 5"
-                className={`svg-path ${selectedRouteFilter === 'evening' ? 'active-path' : ''} ${selectedRouteFilter !== 'evening' && selectedRouteFilter !== 'all' ? 'dimmed-path' : ''}`}
+                className={`transition-all duration-300 ${selectedRouteFilter === 'evening' ? 'opacity-100' : ''} ${selectedRouteFilter !== 'evening' && selectedRouteFilter !== 'all' ? 'opacity-15' : 'opacity-80'}`}
               />
 
               {/* Stops Nodes (Markers) */}
               
               {/* 1. Banff */}
               <g 
-                className={`stop-node ${activeStop === 'banff' ? 'node-active' : ''}`} 
                 onClick={() => handleStopClick('banff')}
-                style={{ cursor: 'pointer' }}
+                className="cursor-pointer group"
               >
-                <circle cx="120" cy="320" r="12" fill="var(--bg-card)" stroke="var(--primary)" strokeWidth="3" />
-                <circle cx="120" cy="320" r="6" fill="var(--primary)" className="node-dot" />
-                <text x="120" y="352" textAnchor="middle" className="node-text">Banff</text>
+                <circle 
+                  cx="120" 
+                  cy="320" 
+                  r="12" 
+                  className={`fill-white dark:fill-[#101917] transition-all duration-200 group-hover:r-[14px] ${
+                    activeStop === 'banff' 
+                      ? 'stroke-accent stroke-[4px]' 
+                      : 'stroke-primary dark:stroke-slate-700 stroke-[3px]'
+                  }`} 
+                />
+                <circle cx="120" cy="320" r="6" className="fill-primary dark:fill-accent group-hover:r-[7px] transition-all duration-200" />
+                <text x="120" y="352" textAnchor="middle" className="font-display font-bold text-xs fill-slate-700 dark:fill-slate-300 pointer-events-none group-hover:fill-primary dark:group-hover:fill-accent transition-colors duration-155">Banff</text>
               </g>
 
               {/* 2. Samson Mall */}
               <g 
-                className={`stop-node ${activeStop === 'samson' ? 'node-active' : ''}`} 
                 onClick={() => handleStopClick('samson')}
-                style={{ cursor: 'pointer' }}
+                className="cursor-pointer group"
               >
-                <circle cx="280" cy="220" r="12" fill="var(--bg-card)" stroke="var(--primary)" strokeWidth="3" />
-                <circle cx="280" cy="220" r="6" fill="var(--primary)" className="node-dot" />
-                <text x="280" y="252" textAnchor="middle" className="node-text">Samson Mall (Village)</text>
+                <circle 
+                  cx="280" 
+                  cy="220" 
+                  r="12" 
+                  className={`fill-white dark:fill-[#101917] transition-all duration-200 group-hover:r-[14px] ${
+                    activeStop === 'samson' 
+                      ? 'stroke-accent stroke-[4px]' 
+                      : 'stroke-primary dark:stroke-slate-700 stroke-[3px]'
+                  }`} 
+                />
+                <circle cx="280" cy="220" r="6" className="fill-primary dark:fill-accent group-hover:r-[7px] transition-all duration-200" />
+                <text x="280" y="252" textAnchor="middle" className="font-display font-bold text-xs fill-slate-700 dark:fill-slate-300 pointer-events-none group-hover:fill-primary dark:group-hover:fill-accent transition-colors duration-155">Samson Mall (Village)</text>
               </g>
 
               {/* 3. Lake Louise Lakeshore */}
               <g 
-                className={`stop-node ${activeStop === 'lakeshore' ? 'node-active' : ''}`} 
                 onClick={() => handleStopClick('lakeshore')}
-                style={{ cursor: 'pointer' }}
+                className="cursor-pointer group"
               >
-                <circle cx="380" cy="120" r="12" fill="var(--bg-card)" stroke="var(--primary)" strokeWidth="3" />
-                <circle cx="380" cy="120" r="6" fill="var(--primary)" className="node-dot" />
-                <text x="380" y="94" textAnchor="middle" className="node-text">Lake Louise Lakeshore</text>
+                <circle 
+                  cx="380" 
+                  cy="120" 
+                  r="12" 
+                  className={`fill-white dark:fill-[#101917] transition-all duration-200 group-hover:r-[14px] ${
+                    activeStop === 'lakeshore' 
+                      ? 'stroke-accent stroke-[4px]' 
+                      : 'stroke-primary dark:stroke-slate-700 stroke-[3px]'
+                  }`} 
+                />
+                <circle cx="380" cy="120" r="6" className="fill-primary dark:fill-accent group-hover:r-[7px] transition-all duration-200" />
+                <text x="380" y="94" textAnchor="middle" className="font-display font-bold text-xs fill-slate-700 dark:fill-slate-300 pointer-events-none group-hover:fill-primary dark:group-hover:fill-accent transition-colors duration-155">Lake Louise Lakeshore</text>
               </g>
 
               {/* 4. Moraine Lake */}
               <g 
-                className={`stop-node ${activeStop === 'moraine' ? 'node-active' : ''}`} 
                 onClick={() => handleStopClick('moraine')}
-                style={{ cursor: 'pointer' }}
+                className="cursor-pointer group"
               >
-                <circle cx="480" cy="120" r="12" fill="var(--bg-card)" stroke="var(--primary)" strokeWidth="3" />
-                <circle cx="480" cy="120" r="6" fill="var(--primary)" className="node-dot" />
-                <text x="480" y="94" textAnchor="middle" className="node-text">Moraine Lake</text>
+                <circle 
+                  cx="480" 
+                  cy="120" 
+                  r="12" 
+                  className={`fill-white dark:fill-[#101917] transition-all duration-200 group-hover:r-[14px] ${
+                    activeStop === 'moraine' 
+                      ? 'stroke-accent stroke-[4px]' 
+                      : 'stroke-primary dark:stroke-slate-700 stroke-[3px]'
+                  }`} 
+                />
+                <circle cx="480" cy="120" r="6" className="fill-primary dark:fill-accent group-hover:r-[7px] transition-all duration-200" />
+                <text x="480" y="94" textAnchor="middle" className="font-display font-bold text-xs fill-slate-700 dark:fill-slate-300 pointer-events-none group-hover:fill-primary dark:group-hover:fill-accent transition-colors duration-155">Moraine Lake</text>
               </g>
             </svg>
           </div>
         </div>
 
         {/* Info Card Sidebar */}
-        <div className="stop-info-panel">
+        <div className="w-full lg:w-[350px] shrink-0 self-stretch">
           {activeStop ? (
-            <div className="card stop-detail-card animate-fade-in">
-              <span className="stop-badge">📍 Selected Station</span>
-              <h3 className="stop-title">{stops[activeStop].name}</h3>
-              <p className="stop-role"><strong>Role:</strong> {stops[activeStop].role}</p>
-              
-              <div className="stop-notes-section">
-                <h4>Pickup & Stop Notes</h4>
-                <ul className="stop-notes-list">
-                  {stops[activeStop].notes.map((note, idx) => (
-                    <li key={idx}>{note}</li>
-                  ))}
-                </ul>
+            <div className="h-full bg-white dark:bg-[#101917] border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg p-6 animate-fade-in flex flex-col gap-5 justify-between">
+              <div className="flex flex-col gap-4">
+                <span className="inline-flex self-start items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide bg-accent-light dark:bg-accent-light/10 text-accent-hover dark:text-accent border border-accent">
+                  📍 Selected Station
+                </span>
+                <h3 className="font-display text-xl font-extrabold text-slate-900 dark:text-white">{stops[activeStop].name}</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-350">
+                  <strong className="text-slate-800 dark:text-slate-200">Role:</strong> {stops[activeStop].role}
+                </p>
+                
+                <div className="flex flex-col gap-2 mt-2">
+                  <h4 className="font-display text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Pickup & Stop Notes</h4>
+                  <ul className="list-none p-0 flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    {stops[activeStop].notes.map((note, idx) => (
+                      <li key={idx} className="relative pl-4">
+                        <span className="absolute left-0 text-accent font-extrabold select-none">•</span>
+                        {note}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
 
-              <div className="stop-tips-section">
-                <h4>Travel Tip</h4>
-                <p>{stops[activeStop].tips}</p>
+              <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <h4 className="font-display text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Travel Tip</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-lg border border-slate-100 dark:border-slate-800 italic">
+                  {stops[activeStop].tips}
+                </p>
               </div>
             </div>
           ) : (
-            <div className="card stop-placeholder-card">
-              <span className="info-icon">💡</span>
-              <h3>Station Information</h3>
-              <p>Click any marker on the map to view specific station loading bays, guidelines, and shuttle departure notes.</p>
-              <div className="quick-stats-row">
-                <div className="stat-card">
-                  <span className="stat-num">4</span>
-                  <span className="stat-lbl">Stations</span>
+            <div className="h-full bg-white dark:bg-[#101917] border border-slate-200 dark:border-slate-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center justify-center min-h-[350px] gap-5">
+              <span className="text-4xl select-none mb-2">💡</span>
+              <h3 className="font-display text-lg font-bold text-slate-900 dark:text-white">Station Information</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-[260px] leading-relaxed">
+                Click any marker on the map to view specific station loading bays, guidelines, and shuttle departure notes.
+              </p>
+              <div className="flex gap-4 mt-2 w-full justify-center">
+                <div className="flex flex-col items-center bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 px-4 py-2.5 rounded-lg min-w-[100px]">
+                  <span className="font-display text-2xl font-extrabold text-primary dark:text-accent">4</span>
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">Stations</span>
                 </div>
-                <div className="stat-card">
-                  <span className="stat-num">5</span>
-                  <span className="stat-lbl">Daily Circuits</span>
+                <div className="flex flex-col items-center bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 px-4 py-2.5 rounded-lg min-w-[100px]">
+                  <span className="font-display text-2xl font-extrabold text-primary dark:text-accent">5</span>
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">Daily Loops</span>
                 </div>
               </div>
             </div>
