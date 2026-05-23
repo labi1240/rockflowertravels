@@ -48,10 +48,7 @@ export default function ScheduleDashboard({ onOpenBooking }: ScheduleDashboardPr
   return (
     <section id="schedule" className="mx-auto max-w-7xl px-6 py-24">
       <header className="mx-auto max-w-2xl text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-evergreen-500 dark:text-sunrise-400">
-          Daily timetables
-        </p>
-        <h2 className="mt-2 font-display text-4xl font-extrabold tracking-tight text-mist-900 dark:text-white sm:text-5xl">
+        <h2 className="font-display text-4xl font-extrabold leading-[1.02] tracking-tighter text-mist-900 dark:text-white sm:text-5xl">
           Pick your departure
         </h2>
         <p className="mt-4 text-base text-mist-500 dark:text-mist-300">
@@ -60,21 +57,33 @@ export default function ScheduleDashboard({ onOpenBooking }: ScheduleDashboardPr
         </p>
       </header>
 
-      {/* Route search */}
-      <div className="mt-12 grid grid-cols-1 gap-4 rounded-2xl border border-mist-200 bg-white p-5 shadow-[var(--shadow-card)] dark:border-evergreen-700/40 dark:bg-evergreen-900 sm:grid-cols-[1fr_auto_1fr_auto]">
+      {/* Trip planner — From → To with interactive swap */}
+      <div className="relative mt-12 grid grid-cols-1 gap-4 rounded-2xl bg-white p-5 shadow-[var(--shadow-card)] ring-1 ring-mist-200/60 dark:bg-evergreen-900 dark:ring-evergreen-700/30 sm:grid-cols-[1fr_auto_1fr_auto] sm:items-end sm:gap-3 sm:p-6">
         <FilterSelect
           id="filter-origin"
           label="From"
+          icon="○"
           value={searchOrigin}
           onChange={setSearchOrigin}
           options={LOCATIONS}
         />
-        <div aria-hidden className="hidden self-end pb-3.5 text-mist-300 dark:text-mist-500 sm:block">
-          ⇄
-        </div>
+        <button
+          type="button"
+          onClick={() => { const o = searchOrigin; setSearchOrigin(searchDestination); setSearchDestination(o); }}
+          aria-label="Swap origin and destination"
+          className="group hidden self-end justify-self-center rounded-full border border-mist-200 bg-white p-2.5 text-mist-500 shadow-sm transition hover:border-sunrise-300 hover:text-sunrise-600 dark:border-evergreen-700/60 dark:bg-evergreen-950/60 dark:text-mist-300 sm:inline-flex"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4 transition group-hover:rotate-180">
+            <path d="M7 4 4 7l3 3" />
+            <path d="M4 7h16" />
+            <path d="m17 20 3-3-3-3" />
+            <path d="M20 17H4" />
+          </svg>
+        </button>
         <FilterSelect
           id="filter-dest"
           label="To"
+          icon="●"
           value={searchDestination}
           onChange={setSearchDestination}
           options={LOCATIONS}
@@ -82,14 +91,15 @@ export default function ScheduleDashboard({ onOpenBooking }: ScheduleDashboardPr
         <button
           type="button"
           onClick={() => { setSearchOrigin('all'); setSearchDestination('all'); }}
-          className="self-end rounded-lg px-4 py-3 text-sm font-semibold text-mist-500 transition hover:text-evergreen-700 dark:text-mist-300 dark:hover:text-sunrise-300"
+          disabled={searchOrigin === 'all' && searchDestination === 'all'}
+          className="self-end rounded-lg px-4 py-3 text-sm font-semibold text-mist-500 transition hover:text-evergreen-700 disabled:cursor-default disabled:opacity-40 disabled:hover:text-mist-500 dark:text-mist-300 dark:hover:text-sunrise-300"
         >
           Clear
         </button>
       </div>
 
-      {/* Tabs */}
-      <div role="tablist" aria-label="Shuttle services" className="mt-10 flex flex-wrap gap-2">
+      {/* Service tabs as compact cards — clearer hierarchy than inline pills */}
+      <div role="tablist" aria-label="Shuttle services" className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {TABS.map((t) => {
           const active = activeTab === t.key;
           return (
@@ -98,16 +108,25 @@ export default function ScheduleDashboard({ onOpenBooking }: ScheduleDashboardPr
               role="tab"
               aria-selected={active}
               onClick={() => setActiveTab(t.key)}
-              className={`group inline-flex items-center gap-3 rounded-full px-5 py-2.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sunrise-400/40 ${
+              className={`group relative flex flex-col gap-2 rounded-2xl border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sunrise-400/40 ${
                 active
-                  ? 'bg-evergreen-800 text-white shadow-[var(--shadow-card)] dark:bg-sunrise-500 dark:text-evergreen-950'
-                  : 'text-mist-600 hover:bg-mist-100 dark:text-mist-300 dark:hover:bg-evergreen-900'
+                  ? 'border-evergreen-800 bg-evergreen-800 text-white shadow-[var(--shadow-card-hover)] dark:border-sunrise-500 dark:bg-sunrise-500 dark:text-evergreen-950'
+                  : 'border-mist-200 bg-white hover:border-mist-300 hover:bg-mist-50 dark:border-evergreen-700/40 dark:bg-evergreen-900 dark:hover:border-evergreen-600'
               }`}
             >
-              <span aria-hidden className="text-base">{t.icon}</span>
-              <span>{t.label}</span>
-              <span className={`text-xs font-normal ${active ? 'text-white/70 dark:text-evergreen-950/70' : 'text-mist-400 dark:text-mist-500'}`}>
-                · {t.window}
+              <div className="flex items-center justify-between">
+                <span aria-hidden className="text-xl">{t.icon}</span>
+                {active && (
+                  <span aria-hidden className="inline-flex size-5 items-center justify-center rounded-full bg-white text-evergreen-800 dark:bg-evergreen-950 dark:text-sunrise-400">
+                    <svg viewBox="0 0 16 16" fill="currentColor" className="size-3"><path d="M13.5 4.5 6 12 2.5 8.5l1-1L6 10l6.5-6.5z" /></svg>
+                  </span>
+                )}
+              </div>
+              <span className={`font-display text-base font-bold leading-tight ${active ? '' : 'text-mist-900 dark:text-white'}`}>
+                {t.label}
+              </span>
+              <span className={`text-xs tabular-nums ${active ? 'text-white/75 dark:text-evergreen-950/75' : 'text-mist-500 dark:text-mist-400'}`}>
+                {t.window}
               </span>
             </button>
           );
@@ -115,7 +134,7 @@ export default function ScheduleDashboard({ onOpenBooking }: ScheduleDashboardPr
       </div>
 
       {/* Panel */}
-      <div className="mt-6 overflow-hidden rounded-2xl border border-mist-200 bg-white shadow-[var(--shadow-card)] dark:border-evergreen-700/40 dark:bg-evergreen-900">
+      <div className="mt-6 overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-card-hover)] dark:bg-evergreen-900">
         {activeTab === 'sunrise' && (
           <SunrisePanel
             routes={sunriseRoutes}
@@ -135,25 +154,43 @@ export default function ScheduleDashboard({ onOpenBooking }: ScheduleDashboardPr
         )}
       </div>
 
-      {/* Advisory */}
-      <aside className="mt-8 rounded-2xl border-l-4 border-l-sunrise-500 border-y border-r border-mist-200 bg-white p-6 dark:border-y-evergreen-700/40 dark:border-r-evergreen-700/40 dark:bg-evergreen-900 sm:p-7">
-        <h3 className="flex items-center gap-2.5 font-display text-lg font-bold text-mist-900 dark:text-white">
-          <span aria-hidden>⚠️</span>
-          Important travel notes
-        </h3>
-        <ul className="mt-4 grid gap-3 text-sm text-mist-600 dark:text-mist-300 sm:grid-cols-2">
-          <Note title="Arrive early">
-            Be at your designated loading area at least <strong className="text-mist-900 dark:text-white">10 minutes</strong> before departure.
-          </Note>
-          <Note title="Schedule draft">
-            Drafted May 03, 2026. Times may change due to traffic, weather, or operations.
-          </Note>
-          <Note title="Stop directions">
+      {/* Advisory — card grid with iconography to differentiate urgency */}
+      <aside className="mt-10">
+        <div className="flex items-baseline justify-between gap-4">
+          <h3 className="font-display text-lg font-bold text-mist-900 dark:text-white">
+            Important travel notes
+          </h3>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-400 dark:text-mist-500">
+            Before you board
+          </span>
+        </div>
+
+        <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <NoteCard
+            icon={<ClockIcon />}
+            tone="primary"
+            title="Arrive 10 minutes early"
+          >
+            Be at your designated loading area before departure — buses depart strictly on schedule.
+          </NoteCard>
+          <NoteCard
+            icon={<PinIcon />}
+            title="Follow stop directions"
+          >
             Lake Louise Lakeshore and Moraine Lake follow designated loading areas; follow staff instructions.
-          </Note>
-          <Note title="Samson Mall">
-            Central pickup and drop-off point in Lake Louise Village.
-          </Note>
+          </NoteCard>
+          <NoteCard
+            icon={<HubIcon />}
+            title="Samson Mall hub"
+          >
+            Central pickup and drop-off point in Lake Louise Village with food, retail, and restrooms.
+          </NoteCard>
+          <NoteCard
+            icon={<DraftIcon />}
+            title="Schedule draft"
+          >
+            Drafted May 03, 2026. Times may change due to traffic, weather, or operations.
+          </NoteCard>
         </ul>
       </aside>
     </section>
@@ -161,17 +198,19 @@ export default function ScheduleDashboard({ onOpenBooking }: ScheduleDashboardPr
 }
 
 function FilterSelect({
-  id, label, value, onChange, options,
+  id, label, value, onChange, options, icon,
 }: {
   id: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
+  icon?: string;
 }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500 dark:text-mist-400">
+      <label htmlFor={id} className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-mist-500 dark:text-mist-400">
+        {icon && <span aria-hidden className="text-sunrise-500">{icon}</span>}
         {label}
       </label>
       <select
@@ -190,21 +229,121 @@ function FilterSelect({
   );
 }
 
-function Note({ title, children }: { title: string; children: React.ReactNode }) {
+function NoteCard({
+  icon, title, children, tone = 'default',
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+  tone?: 'default' | 'primary';
+}) {
+  const isPrimary = tone === 'primary';
   return (
-    <li className="flex gap-3">
-      <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-sunrise-500" />
-      <div>
-        <p className="font-semibold text-mist-900 dark:text-white">{title}</p>
-        <p className="mt-0.5 leading-relaxed">{children}</p>
+    <li
+      className={`rounded-2xl p-4 transition sm:p-5 ${
+        isPrimary
+          ? 'bg-evergreen-800 text-white shadow-[var(--shadow-card)] dark:bg-sunrise-500 dark:text-evergreen-950'
+          : 'bg-white shadow-[var(--shadow-card)] ring-1 ring-mist-200/60 dark:bg-evergreen-900 dark:ring-evergreen-700/30'
+      }`}
+    >
+      <div
+        className={`inline-flex size-9 items-center justify-center rounded-xl ${
+          isPrimary
+            ? 'bg-white/15 text-white dark:bg-evergreen-950/30 dark:text-evergreen-950'
+            : 'bg-sunrise-100 text-sunrise-700 dark:bg-sunrise-500/15 dark:text-sunrise-300'
+        }`}
+        aria-hidden
+      >
+        {icon}
       </div>
+      <p className={`mt-3.5 font-display text-sm font-bold leading-snug ${isPrimary ? '' : 'text-mist-900 dark:text-white'}`}>
+        {title}
+      </p>
+      <p className={`mt-1.5 text-xs leading-relaxed ${isPrimary ? 'text-white/85 dark:text-evergreen-950/85' : 'text-mist-500 dark:text-mist-300'}`}>
+        {children}
+      </p>
     </li>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+      <path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12Z" />
+      <circle cx="12" cy="9" r="2.5" />
+    </svg>
+  );
+}
+
+function HubIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+      <path d="M4 10h16l-1.5 9.5a1 1 0 0 1-1 .85h-11a1 1 0 0 1-1-.85L4 10Z" />
+      <path d="M8 10V7a4 4 0 1 1 8 0v3" />
+    </svg>
+  );
+}
+
+function DraftIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 3v5h5" />
+      <path d="M9 13h6M9 17h4" />
+    </svg>
+  );
+}
+
+function RouteSummary({
+  stops, durationLabel, loop = false,
+}: {
+  stops: string[];
+  durationLabel?: string;
+  loop?: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+        {stops.map((stop, i) => (
+          <React.Fragment key={`${stop}-${i}`}>
+            <span className="inline-flex items-center gap-2">
+              <span aria-hidden className="size-2 rounded-full bg-sunrise-500 ring-[3px] ring-sunrise-500/15" />
+              <span className="font-display text-sm font-bold text-mist-900 dark:text-white">{stop}</span>
+            </span>
+            {i < stops.length - 1 && (
+              <span aria-hidden className="text-mist-300 dark:text-mist-500">→</span>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+      <div className="ml-auto flex flex-wrap items-center gap-1.5">
+        {loop && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-mist-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-mist-500 dark:bg-evergreen-950/40 dark:text-mist-400">
+            <span aria-hidden>↻</span> loop
+          </span>
+        )}
+        {durationLabel && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-evergreen-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-evergreen-700 tabular-nums dark:bg-evergreen-700/30 dark:text-evergreen-200">
+            <span aria-hidden>⏱</span> {durationLabel}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
 function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="bg-mist-50 px-6 py-3.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-mist-500 dark:bg-evergreen-950/40 dark:text-mist-400">
+    <th className="bg-mist-50 px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-mist-500 dark:bg-evergreen-950/40 dark:text-mist-400">
       {children}
     </th>
   );
@@ -248,9 +387,10 @@ function SunrisePanel({
 }) {
   return (
     <div className="animate-fade-in">
-      <div className="flex flex-col gap-3 border-b border-mist-200 px-6 py-5 dark:border-evergreen-700/40 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-mist-600 dark:text-mist-300">
-          Premium 4:30 AM departure direct to Moraine Lake. Positioning legs are not bookable.
+      <div className="border-b border-mist-200 px-6 py-5 dark:border-evergreen-700/40">
+        <RouteSummary stops={['Banff', 'Moraine Lake']} durationLabel="1h 30m direct" />
+        <p className="mt-3 text-sm text-mist-500 dark:text-mist-400">
+          Premium 4:30 AM departure direct to Moraine Lake. Positioning legs are internal only.
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -271,11 +411,15 @@ function SunrisePanel({
               const dMap = ['moraine','lakeshore','samson'];
               const isMatch = (origin === 'all' || map[i] === origin) && (dest === 'all' || dMap[i] === dest);
               return (
-                <tr key={r.id} className={`border-t border-mist-200 dark:border-evergreen-700/30 ${isMatch ? '' : 'opacity-40'}`}>
-                  <td className="px-6 py-4 font-medium text-mist-900 dark:text-white">{r.route}</td>
-                  <td className="px-6 py-4"><Time value={r.depart} muted={isPositioning} /></td>
-                  <td className="px-6 py-4"><Time value={r.arrive} muted={isPositioning} /></td>
-                  <td className="px-6 py-4">
+                <tr
+                  key={r.id}
+                  className={`border-t border-mist-100 transition dark:border-evergreen-700/20 ${
+                    i % 2 === 1 ? 'bg-mist-50/40 dark:bg-evergreen-950/20' : ''
+                  } ${isMatch ? '' : 'opacity-40'}`}>
+                  <td className="px-5 py-3.5 font-medium text-mist-900 dark:text-white">{r.route}</td>
+                  <td className="px-5 py-3.5"><Time value={r.depart} muted={isPositioning} /></td>
+                  <td className="px-5 py-3.5"><Time value={r.arrive} muted={isPositioning} /></td>
+                  <td className="px-5 py-3.5">
                     {isPositioning ? (
                       <span className="inline-flex items-center rounded-full bg-mist-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-mist-500 dark:bg-evergreen-950/50 dark:text-mist-400">
                         Positioning
@@ -286,7 +430,7 @@ function SunrisePanel({
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-3.5">
                     <BookButton onClick={onBook} disabled={isPositioning} label={isPositioning ? 'Internal' : 'Book'} />
                   </td>
                 </tr>
@@ -303,9 +447,13 @@ function DaytimePanel({ circuits, onBook }: { circuits: typeof daytimeCircuits; 
   return (
     <div className="animate-fade-in">
       <div className="border-b border-mist-200 px-6 py-5 dark:border-evergreen-700/40">
-        <p className="text-sm text-mist-600 dark:text-mist-300">
-          <strong className="text-mist-900 dark:text-white">Pattern:</strong>{' '}
-          Samson Mall → Lake Louise Lakeshore → Moraine Lake → back to Samson Mall.
+        <RouteSummary
+          stops={['Samson Mall', 'Lake Louise Lakeshore', 'Moraine Lake', 'Samson Mall']}
+          durationLabel="1h 50m"
+          loop
+        />
+        <p className="mt-3 text-sm text-mist-500 dark:text-mist-400">
+          Five loops per day from Samson Mall. Book any circuit below.
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -321,14 +469,18 @@ function DaytimePanel({ circuits, onBook }: { circuits: typeof daytimeCircuits; 
             </tr>
           </thead>
           <tbody>
-            {circuits.map((c) => (
-              <tr key={c.id} className="border-t border-mist-200 transition hover:bg-mist-50/60 dark:border-evergreen-700/30 dark:hover:bg-evergreen-950/30">
-                <td className="px-6 py-4 font-semibold text-mist-900 dark:text-white">{c.name}</td>
-                <td className="px-6 py-4"><Time value={c.samson} /></td>
-                <td className="px-6 py-4"><Time value={c.lakeshore} /></td>
-                <td className="px-6 py-4"><Time value={c.moraine} /></td>
-                <td className="px-6 py-4"><Time value={c.returnSamson} /></td>
-                <td className="px-6 py-4"><BookButton onClick={onBook} /></td>
+            {circuits.map((c, i) => (
+              <tr
+                key={c.id}
+                className={`border-t border-mist-100 transition hover:bg-sunrise-50/60 dark:border-evergreen-700/20 dark:hover:bg-evergreen-800/40 ${
+                  i % 2 === 1 ? 'bg-mist-50/40 dark:bg-evergreen-950/20' : ''
+                }`}>
+                <td className="px-5 py-3.5 font-semibold text-mist-900 dark:text-white">{c.name}</td>
+                <td className="px-5 py-3.5"><Time value={c.samson} /></td>
+                <td className="px-5 py-3.5"><Time value={c.lakeshore} /></td>
+                <td className="px-5 py-3.5"><Time value={c.moraine} /></td>
+                <td className="px-5 py-3.5"><Time value={c.returnSamson} /></td>
+                <td className="px-5 py-3.5"><BookButton onClick={onBook} /></td>
               </tr>
             ))}
           </tbody>
@@ -342,7 +494,8 @@ function EveningPanel({ routes, onBook }: { routes: typeof eveningRoutes; onBook
   return (
     <div className="animate-fade-in">
       <div className="border-b border-mist-200 px-6 py-5 dark:border-evergreen-700/40">
-        <p className="text-sm text-mist-600 dark:text-mist-300">Standard evening departure back to Banff. Reservations recommended.</p>
+        <RouteSummary stops={['Lake Louise Lakeshore', 'Banff']} durationLabel="1h 15m" />
+        <p className="mt-3 text-sm text-mist-500 dark:text-mist-400">Single evening departure back to Banff. Reservations recommended.</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -357,10 +510,10 @@ function EveningPanel({ routes, onBook }: { routes: typeof eveningRoutes; onBook
           <tbody>
             {routes.map((r) => (
               <tr key={r.id} className="border-t border-mist-200 dark:border-evergreen-700/30">
-                <td className="px-6 py-4 font-medium text-mist-900 dark:text-white">{r.route}</td>
-                <td className="px-6 py-4"><Time value={r.depart} /></td>
-                <td className="px-6 py-4"><Time value={r.arrive} /></td>
-                <td className="px-6 py-4"><BookButton onClick={onBook} /></td>
+                <td className="px-5 py-3.5 font-medium text-mist-900 dark:text-white">{r.route}</td>
+                <td className="px-5 py-3.5"><Time value={r.depart} /></td>
+                <td className="px-5 py-3.5"><Time value={r.arrive} /></td>
+                <td className="px-5 py-3.5"><BookButton onClick={onBook} /></td>
               </tr>
             ))}
           </tbody>

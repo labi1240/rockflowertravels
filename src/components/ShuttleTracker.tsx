@@ -168,22 +168,13 @@ export default function ShuttleTracker() {
   };
 
   return (
-    <section id="tracker" className="mx-auto max-w-7xl px-6 py-24">
-      <header className="mx-auto max-w-2xl text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-evergreen-500 dark:text-sunrise-400">
-          Live network
-        </p>
-        <h2 className="mt-2 font-display text-4xl font-extrabold tracking-tight text-mist-900 dark:text-white sm:text-5xl">
-          Where's the shuttle right now?
-        </h2>
-        <p className="mt-4 text-base text-mist-500 dark:text-mist-300">
-          Live position in Mountain Time, or drag the slider to simulate any moment of the day.
-        </p>
-      </header>
-
-      <div className="mx-auto mt-12 max-w-5xl overflow-hidden rounded-3xl border border-mist-200 bg-white shadow-[var(--shadow-card)] dark:border-evergreen-700/40 dark:bg-evergreen-900">
+    <section id="tracker" className="relative mx-auto max-w-7xl px-6 pb-24">
+      {/* Live module overlaps the hero seam (book: Overlap elements to create layers) */}
+      <div className="mx-auto -mt-24 max-w-4xl overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-elevated)] dark:bg-evergreen-900 lg:-mt-32">
+        <div className="h-1 w-full bg-gradient-to-r from-sunrise-500/0 via-sunrise-500 to-sunrise-500/0" />
+        <h2 id="tracker-heading" className="sr-only">Where's the shuttle right now?</h2>
         {/* Header strip */}
-        <div className="flex flex-col gap-5 border-b border-mist-200 p-6 dark:border-evergreen-700/40 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+        <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
           <div>
             <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-mist-500 dark:text-mist-300">
               <span className={`size-2 rounded-full ${isLive ? 'bg-emerald-500 shadow-[0_0_0_3px_hsl(160_84%_50%/0.25)] animate-pulse' : 'bg-sunrise-400 shadow-[0_0_0_3px_hsl(41_80%_50%/0.25)]'}`} />
@@ -225,23 +216,25 @@ export default function ShuttleTracker() {
         )}
 
         {/* Progress segment */}
-        <div className="px-6 py-10 dark:px-7">
-          <div className="relative mx-auto max-w-xl">
-            <div className="flex justify-between text-xs">
+        <div className="px-6 pb-12 pt-4 sm:px-10">
+          <div className="relative mx-auto max-w-lg">
+            <div className="flex justify-between gap-4">
               <Stop label={trackerState.fromStation} align="left" />
               <Stop label={trackerState.toStation} align="right" />
             </div>
-            <div className="relative mt-3">
-              <div className="absolute inset-x-3 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-mist-200 dark:bg-evergreen-800" />
+            <div className="relative mt-4 h-9">
+              <div className="absolute inset-x-4 top-1/2 h-2 -translate-y-1/2 rounded-full bg-mist-200 dark:bg-evergreen-800" />
               <div
-                className="absolute inset-y-1/2 left-3 h-1.5 -translate-y-1/2 rounded-full bg-sunrise-500 transition-[width] duration-500 ease-out"
-                style={{ width: `calc(${trackerState.status === 'closed' ? 0 : trackerState.progressPercent}% - 1.5rem * ${trackerState.progressPercent / 100})` }}
+                className="absolute top-1/2 left-4 h-2 -translate-y-1/2 rounded-full bg-sunrise-500 shadow-[0_0_0_4px_hsl(41_78%_50%/0.12)] transition-[width] duration-500 ease-out"
+                style={{ width: `calc(${trackerState.status === 'closed' ? 0 : trackerState.progressPercent}% - 2rem * ${trackerState.progressPercent / 100})` }}
               />
+              <span aria-hidden className="absolute left-0 top-1/2 size-4 -translate-y-1/2 rounded-full border-2 border-evergreen-700 bg-white dark:border-sunrise-400 dark:bg-evergreen-900" />
+              <span aria-hidden className="absolute right-0 top-1/2 size-4 -translate-y-1/2 rounded-full border-2 border-evergreen-700 bg-white dark:border-sunrise-400 dark:bg-evergreen-900" />
               {trackerState.status !== 'closed' && (
                 <div
-                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl transition-[left] duration-500 ease-out"
+                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl transition-[left] duration-500 ease-out"
                   style={{
-                    left: `calc(0.75rem + (100% - 1.5rem) * ${trackerState.progressPercent / 100})`,
+                    left: `calc(1rem + (100% - 2rem) * ${trackerState.progressPercent / 100})`,
                     animation: trackerState.status === 'en-route' ? 'busDrive 0.6s infinite ease' : 'none',
                   }}
                   aria-hidden
@@ -253,28 +246,34 @@ export default function ShuttleTracker() {
           </div>
         </div>
 
-        {/* Telemetry */}
-        <div className="grid grid-cols-1 gap-px border-t border-mist-200 bg-mist-200 dark:border-evergreen-700/40 dark:bg-evergreen-700/40 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Telemetry — value first, label is supporting */}
+        <div className="grid grid-cols-1 gap-8 bg-mist-50/70 px-6 py-7 dark:bg-evergreen-950/30 sm:grid-cols-2 sm:px-7 lg:grid-cols-[1.4fr_1.6fr_0.8fr_0.9fr]">
           <Telemetry label="Active service" value={trackerState.activeService} />
           <Telemetry label="Current sector" value={trackerState.segment} />
-          <div className="bg-white p-5 dark:bg-evergreen-900">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500 dark:text-mist-400">Status</p>
-            <span className={`mt-2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusMeta[trackerState.status].tone}`}>
-              {statusMeta[trackerState.status].label}
-            </span>
-          </div>
-          <div className="bg-white p-5 dark:bg-evergreen-900">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500 dark:text-mist-400">
-              {trackerState.status === 'closed' ? 'Next departure in' : 'Arrives in'}
+          <div>
+            <p className="font-display text-base font-bold leading-snug text-mist-900 dark:text-white">
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${statusMeta[trackerState.status].tone}`}>
+                {statusMeta[trackerState.status].label}
+              </span>
             </p>
-            <p className="mt-2 font-display text-2xl font-bold text-sunrise-600 tabular-nums dark:text-sunrise-400">
+            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-400 dark:text-mist-500">Status</p>
+          </div>
+          <div>
+            <p className="font-display text-2xl font-extrabold tabular-nums text-mist-900 dark:text-white">
               {trackerState.status === 'closed'
                 ? `${Math.floor(trackerState.etaMins / 60)}h ${trackerState.etaMins % 60}m`
-                : `${trackerState.etaMins} min`}
+                : <>{trackerState.etaMins}<span className="ml-1 text-base font-bold text-mist-400 dark:text-mist-500">min</span></>}
+            </p>
+            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-400 dark:text-mist-500">
+              {trackerState.status === 'closed' ? 'Next departure' : 'Arrives in'}
             </p>
           </div>
         </div>
       </div>
+
+      <p className="mx-auto mt-6 max-w-md text-center text-sm text-mist-500 dark:text-mist-300">
+        Live position in Mountain Time. Switch to <strong className="font-semibold text-mist-700 dark:text-white">Simulator</strong> to scrub any moment of the day.
+      </p>
     </section>
   );
 }
@@ -297,18 +296,17 @@ function ToggleButton({ active, onClick, children }: { active: boolean; onClick:
 
 function Stop({ label, align }: { label: string; align: 'left' | 'right' }) {
   return (
-    <div className={`flex flex-col gap-1.5 ${align === 'right' ? 'items-end' : 'items-start'}`}>
-      <span className="size-3 rounded-full border-2 border-evergreen-700 bg-white dark:border-sunrise-400 dark:bg-evergreen-900" />
-      <span className="font-display text-xs font-semibold text-mist-700 dark:text-white">{label}</span>
+    <div className={`flex flex-col gap-2 ${align === 'right' ? 'items-end text-right' : 'items-start text-left'}`}>
+      <span className="font-display text-sm font-bold text-mist-900 dark:text-white">{label}</span>
     </div>
   );
 }
 
 function Telemetry({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white p-5 dark:bg-evergreen-900">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500 dark:text-mist-400">{label}</p>
-      <p className="mt-2 font-display text-sm font-semibold leading-snug text-mist-900 dark:text-white">{value}</p>
+    <div>
+      <p className="font-display text-base font-bold leading-snug text-mist-900 dark:text-white">{value}</p>
+      <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-400 dark:text-mist-500">{label}</p>
     </div>
   );
 }

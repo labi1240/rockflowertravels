@@ -90,10 +90,7 @@ export default function RouteMap() {
   return (
     <section id="map" className="mx-auto max-w-7xl px-6 py-24">
       <header className="mx-auto max-w-2xl text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-evergreen-500 dark:text-sunrise-400">
-          Network map
-        </p>
-        <h2 className="mt-2 font-display text-4xl font-extrabold tracking-tight text-mist-900 dark:text-white sm:text-5xl">
+        <h2 className="font-display text-4xl font-extrabold leading-[1.02] tracking-tighter text-mist-900 dark:text-white sm:text-5xl">
           Where we go
         </h2>
         <p className="mt-4 text-base text-mist-500 dark:text-mist-300">
@@ -103,9 +100,9 @@ export default function RouteMap() {
 
       <div className="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-[1.5fr_1fr]">
         {/* Map */}
-        <div className="overflow-hidden rounded-2xl border border-mist-200 bg-white shadow-[var(--shadow-card)] dark:border-evergreen-700/40 dark:bg-evergreen-900">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-card-hover)] dark:bg-evergreen-900">
           {/* Filters */}
-          <div className="flex flex-wrap gap-1.5 border-b border-mist-200 bg-mist-50/60 p-4 dark:border-evergreen-700/40 dark:bg-evergreen-950/40">
+          <div className="flex flex-wrap gap-1.5 bg-mist-50/60 p-4 dark:bg-evergreen-950/40">
             <FilterPill active={filter === 'all'} onClick={() => setFilter('all')}>All routes</FilterPill>
             {(Object.keys(ROUTE_META) as Exclude<RouteKey, 'all'>[]).map((k) => (
               <FilterPill key={k} active={filter === k} onClick={() => setFilter(k)} color={ROUTE_META[k].color}>
@@ -196,7 +193,7 @@ export default function RouteMap() {
           </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-x-5 gap-y-2 border-t border-mist-200 px-4 py-3 text-xs text-mist-500 dark:border-evergreen-700/40 dark:text-mist-300">
+          <div className="flex flex-wrap gap-x-5 gap-y-2 bg-mist-50/60 px-4 py-3 text-xs text-mist-500 dark:bg-evergreen-950/40 dark:text-mist-300">
             <LegendItem color="var(--color-sunrise-500)" label="Sunrise Express" />
             <LegendItem color="var(--color-evergreen-500)" label="Daytime Circuit" />
             <LegendItem color="var(--color-evergreen-700)" label="Evening Return" />
@@ -205,7 +202,7 @@ export default function RouteMap() {
         </div>
 
         {/* Sidebar */}
-        <aside className="rounded-2xl border border-mist-200 bg-white p-6 shadow-[var(--shadow-card)] dark:border-evergreen-700/40 dark:bg-evergreen-900">
+        <aside className="rounded-2xl bg-white p-6 shadow-[var(--shadow-card-hover)] dark:bg-evergreen-900">
           {activeStop ? (
             <div className="animate-fade-in">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-sunrise-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-sunrise-700 dark:bg-sunrise-500/15 dark:text-sunrise-300">
@@ -242,22 +239,35 @@ export default function RouteMap() {
               </div>
             </div>
           ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-5 text-center">
-              <div className="grid size-14 place-items-center rounded-2xl bg-sunrise-100 text-2xl dark:bg-sunrise-500/15">
-                💡
-              </div>
-              <div>
-                <h3 className="font-display text-lg font-bold text-mist-900 dark:text-white">
-                  Tap a stop
-                </h3>
-                <p className="mx-auto mt-1 max-w-xs text-sm text-mist-500 dark:text-mist-300">
-                  Loading bays, departure notes, and travel tips for every station.
-                </p>
-              </div>
-              <div className="grid w-full grid-cols-2 gap-3">
-                <Stat value="4" label="Stations" />
-                <Stat value="5" label="Daily loops" />
-              </div>
+            <div className="flex h-full flex-col">
+              <h3 className="font-display text-lg font-bold text-mist-900 dark:text-white">
+                Stations on the network
+              </h3>
+              <p className="mt-1 text-sm text-mist-500 dark:text-mist-300">
+                Tap any stop on the map — or pick one here — for loading bays and travel tips.
+              </p>
+
+              <ul className="mt-5 grid gap-2">
+                {(Object.keys(STOPS) as StopKey[]).map((key) => (
+                  <li key={key}>
+                    <button
+                      type="button"
+                      onClick={() => setActiveStop(key)}
+                      className="group flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition hover:bg-mist-50 dark:hover:bg-evergreen-950/40"
+                    >
+                      <span>
+                        <span className="block font-display text-sm font-bold text-mist-900 dark:text-white">
+                          {STOPS[key].name}
+                        </span>
+                        <span className="block text-xs text-mist-500 dark:text-mist-400">
+                          {STOPS[key].role}
+                        </span>
+                      </span>
+                      <span aria-hidden className="text-mist-300 transition group-hover:translate-x-0.5 group-hover:text-sunrise-500 dark:text-mist-500">→</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </aside>
@@ -323,11 +333,3 @@ function LegendItem({ color, label, dashed = false }: { color: string; label: st
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="rounded-xl border border-mist-200 bg-mist-50 px-4 py-3 text-center dark:border-evergreen-700/40 dark:bg-evergreen-950/40">
-      <div className="font-display text-2xl font-extrabold text-mist-900 dark:text-white">{value}</div>
-      <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-mist-500 dark:text-mist-400">{label}</div>
-    </div>
-  );
-}
