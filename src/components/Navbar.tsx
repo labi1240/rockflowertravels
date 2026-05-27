@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
+import { useBookingModal } from '@/store/booking-modal';
 
 const TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/Edmonton',
@@ -14,6 +15,7 @@ const TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
 export default function Navbar() {
   const [mountainTime, setMountainTime] = useState<string>('');
   const { isLoaded, isSignedIn } = useUser();
+  const openBooking = useBookingModal((s) => s.open);
 
   useEffect(() => {
     const update = () => setMountainTime(TIME_FORMATTER.format(new Date()));
@@ -47,12 +49,13 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <a
-            href="#booking"
+          <button
+            type="button"
+            onClick={() => openBooking()}
             className="hidden md:inline-flex items-center justify-center rounded-full bg-gradient-to-r from-sunrise-400 to-sunrise-500 px-5 py-2 text-sm font-bold text-evergreen-950 shadow-[0_0_15px_hsla(41,80%,58%,0.3)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_25px_hsla(41,80%,58%,0.5)] active:scale-95"
           >
             Book Shuttle
-          </a>
+          </button>
 
           <div className="h-6 w-px bg-white/10 hidden md:block mx-1" />
 

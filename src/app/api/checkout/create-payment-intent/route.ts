@@ -5,9 +5,9 @@ import { prisma } from '@/lib/prisma';
 export const runtime = 'nodejs';
 
 const ROUTE_PRICE_CENTS: Record<string, number> = {
-  'sunrise-express': 4500,
-  'daytime-circuit': 2500,
-  'evening-return':  2000,
+  'sunrise-express': 6499,
+  'daytime-circuit': 6499,
+  'evening-return':  6499,
 };
 
 const ROUTE_LABEL: Record<string, string> = {
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     const [firstName, ...rest] = name.split(/\s+/);
     const lastName = rest.join(' ') || null;
     const reference = generateReference();
-    const holdExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const holdExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     const booking = await prisma.booking.create({
       data: {
@@ -140,6 +140,7 @@ export async function POST(req: NextRequest) {
       clientSecret: paymentIntent.client_secret,
       bookingId: booking.id,
       reference,
+      holdExpiresAt: holdExpiresAt.toISOString(),
     });
   } catch (err) {
     console.error('[create-payment-intent] failed', err);

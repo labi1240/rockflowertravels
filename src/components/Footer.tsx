@@ -12,7 +12,7 @@ export default function Footer() {
   return (
     <footer className="mt-auto bg-evergreen-950 text-white">
       <div className="h-px w-full bg-gradient-to-r from-transparent via-sunrise-500/40 to-transparent" />
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-12 px-6 pb-12 pt-20 lg:grid-cols-[1.3fr_0.7fr_0.7fr]">
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-12 px-6 pb-12 pt-20 lg:grid-cols-[1.3fr_0.7fr_0.7fr_0.7fr]">
         <div>
           <Image
             src="/white_logo.png"
@@ -48,6 +48,10 @@ export default function Footer() {
             </a>
           </li>
           <li className="text-sm text-mist-400">Banff Visitor Center</li>
+        </FooterColumn>
+
+        <FooterColumn title="Legal">
+          <FooterLink href="/privacy-policy">Privacy policy</FooterLink>
         </FooterColumn>
       </div>
 

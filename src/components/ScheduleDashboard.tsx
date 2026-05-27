@@ -1,50 +1,8 @@
-'use client';
+import React from 'react';
+import ScheduleInteractive from '@/components/ScheduleInteractive';
+import ServiceCards from '@/components/ServiceCards';
 
-import React, { useState } from 'react';
-
-interface ScheduleDashboardProps {
-  onOpenBooking: (route: string) => void;
-}
-
-type TabKey = 'sunrise' | 'daytime' | 'evening';
-
-const TABS: { key: TabKey; label: string; window: string; icon: string }[] = [
-  { key: 'sunrise', label: 'Sunrise Express', window: '4:30 AM – 6:50 AM', icon: '🌅' },
-  { key: 'daytime', label: 'Daytime Circuit', window: '7:00 AM – 5:20 PM', icon: '☀️' },
-  { key: 'evening', label: 'Evening Return', window: '6:00 PM departure', icon: '🌇' },
-];
-
-const LOCATIONS = [
-  { value: 'all', label: 'All locations' },
-  { value: 'banff', label: 'Banff' },
-  { value: 'samson', label: 'Samson Mall (Village)' },
-  { value: 'lakeshore', label: 'Lake Louise Lakeshore' },
-  { value: 'moraine', label: 'Moraine Lake' },
-];
-
-const sunriseRoutes = [
-  { id: 's1', route: 'Banff → Moraine Lake',                        depart: '4:30 AM', arrive: '6:00 AM', type: 'Premium' as const },
-  { id: 's2', route: 'Moraine Lake → Lake Louise Lakeshore',        depart: '6:10 AM', arrive: '6:35 AM', type: 'Positioning' as const },
-  { id: 's3', route: 'Lake Louise Lakeshore → Samson Mall',         depart: '6:35 AM', arrive: '6:50 AM', type: 'Positioning' as const },
-];
-
-const daytimeCircuits = [
-  { id: 'c1', name: 'Circuit 1', samson: '7:00 AM',  lakeshore: '7:15 AM',  moraine: '7:40 AM',  returnSamson: '8:50 AM'  },
-  { id: 'c2', name: 'Circuit 2', samson: '9:00 AM',  lakeshore: '9:15 AM',  moraine: '9:40 AM',  returnSamson: '10:50 AM' },
-  { id: 'c3', name: 'Circuit 3', samson: '11:00 AM', lakeshore: '11:15 AM', moraine: '11:40 AM', returnSamson: '12:50 PM' },
-  { id: 'c4', name: 'Circuit 4', samson: '1:30 PM',  lakeshore: '1:45 PM',  moraine: '2:10 PM',  returnSamson: '3:20 PM'  },
-  { id: 'c5', name: 'Circuit 5', samson: '3:30 PM',  lakeshore: '3:45 PM',  moraine: '4:10 PM',  returnSamson: '5:20 PM'  },
-];
-
-const eveningRoutes = [
-  { id: 'e1', route: 'Lake Louise Lakeshore → Banff', depart: '6:00 PM', arrive: '7:15 PM' },
-];
-
-export default function ScheduleDashboard({ onOpenBooking }: ScheduleDashboardProps) {
-  const [activeTab, setActiveTab] = useState<TabKey>('daytime');
-  const [searchOrigin, setSearchOrigin] = useState<string>('all');
-  const [searchDestination, setSearchDestination] = useState<string>('all');
-
+export default function ScheduleDashboard() {
   return (
     <section id="schedule" className="mx-auto max-w-7xl px-6 py-24">
       <header className="mx-auto max-w-2xl text-center">
@@ -57,104 +15,56 @@ export default function ScheduleDashboard({ onOpenBooking }: ScheduleDashboardPr
         </p>
       </header>
 
-      {/* Trip planner — From → To with interactive swap */}
-      <div className="relative mt-12 grid grid-cols-1 gap-4 rounded-2xl bg-white p-5 shadow-[var(--shadow-card)] ring-1 ring-mist-200/60 dark:bg-evergreen-900 dark:ring-evergreen-700/30 sm:grid-cols-[1fr_auto_1fr_auto] sm:items-end sm:gap-3 sm:p-6">
-        <FilterSelect
-          id="filter-origin"
-          label="From"
-          icon="○"
-          value={searchOrigin}
-          onChange={setSearchOrigin}
-          options={LOCATIONS}
-        />
-        <button
-          type="button"
-          onClick={() => { const o = searchOrigin; setSearchOrigin(searchDestination); setSearchDestination(o); }}
-          aria-label="Swap origin and destination"
-          className="group hidden self-end justify-self-center rounded-full border border-mist-200 bg-white p-2.5 text-mist-500 shadow-sm transition hover:border-sunrise-300 hover:text-sunrise-600 dark:border-evergreen-700/60 dark:bg-evergreen-950/60 dark:text-mist-300 sm:inline-flex"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4 transition group-hover:rotate-180">
-            <path d="M7 4 4 7l3 3" />
-            <path d="M4 7h16" />
-            <path d="m17 20 3-3-3-3" />
-            <path d="M20 17H4" />
-          </svg>
-        </button>
-        <FilterSelect
-          id="filter-dest"
-          label="To"
-          icon="●"
-          value={searchDestination}
-          onChange={setSearchDestination}
-          options={LOCATIONS}
-        />
-        <button
-          type="button"
-          onClick={() => { setSearchOrigin('all'); setSearchDestination('all'); }}
-          disabled={searchOrigin === 'all' && searchDestination === 'all'}
-          className="self-end rounded-lg px-4 py-3 text-sm font-semibold text-mist-500 transition hover:text-evergreen-700 disabled:cursor-default disabled:opacity-40 disabled:hover:text-mist-500 dark:text-mist-300 dark:hover:text-sunrise-300"
-        >
-          Clear
-        </button>
-      </div>
+      {/* Service overview — photo-backed orientation cards above pricing & schedule */}
+      <ServiceCards />
 
-      {/* Service tabs as compact cards — clearer hierarchy than inline pills */}
-      <div role="tablist" aria-label="Shuttle services" className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {TABS.map((t) => {
-          const active = activeTab === t.key;
-          return (
-            <button
-              key={t.key}
-              role="tab"
-              aria-selected={active}
-              onClick={() => setActiveTab(t.key)}
-              className={`group relative flex flex-col gap-2 rounded-2xl border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sunrise-400/40 ${
-                active
-                  ? 'border-evergreen-800 bg-evergreen-800 text-white shadow-[var(--shadow-card-hover)] dark:border-sunrise-500 dark:bg-sunrise-500 dark:text-evergreen-950'
-                  : 'border-mist-200 bg-white hover:border-mist-300 hover:bg-mist-50 dark:border-evergreen-700/40 dark:bg-evergreen-900 dark:hover:border-evergreen-600'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span aria-hidden className="text-xl">{t.icon}</span>
-                {active && (
-                  <span aria-hidden className="inline-flex size-5 items-center justify-center rounded-full bg-white text-evergreen-800 dark:bg-evergreen-950 dark:text-sunrise-400">
-                    <svg viewBox="0 0 16 16" fill="currentColor" className="size-3"><path d="M13.5 4.5 6 12 2.5 8.5l1-1L6 10l6.5-6.5z" /></svg>
-                  </span>
-                )}
-              </div>
-              <span className={`font-display text-base font-bold leading-tight ${active ? '' : 'text-mist-900 dark:text-white'}`}>
-                {t.label}
-              </span>
-              <span className={`text-xs tabular-nums ${active ? 'text-white/75 dark:text-evergreen-950/75' : 'text-mist-500 dark:text-mist-400'}`}>
-                {t.window}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Pricing & bundles — static, server-rendered above the planner so seats and savings are visible at the same moment */}
+      <section aria-labelledby="pricing-heading" className="mt-12">
+        <div className="flex items-baseline justify-between gap-4">
+          <h3 id="pricing-heading" className="font-display text-lg font-bold text-mist-900 dark:text-white">
+            Pricing &amp; bundles
+          </h3>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-400 dark:text-mist-500">
+            All prices CAD · 5% GST extra
+          </span>
+        </div>
 
-      {/* Panel */}
-      <div className="mt-6 overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-card-hover)] dark:bg-evergreen-900">
-        {activeTab === 'sunrise' && (
-          <SunrisePanel
-            routes={sunriseRoutes}
-            onBook={() => onOpenBooking('sunrise-express')}
-            origin={searchOrigin}
-            dest={searchDestination}
+        <ul className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <PriceCard
+            eyebrow="Single leg"
+            title="Single trip"
+            priceCents={6499}
+            description="One point-to-point seat on any Sunrise Express, Daytime Circuit, or Evening Return leg."
+            note="Best for short transfers"
           />
-        )}
-        {activeTab === 'daytime' && (
-          <DaytimePanel
-            circuits={daytimeCircuits}
-            onBook={() => onOpenBooking('daytime-circuit')}
+          <PriceCard
+            eyebrow="Best value"
+            title="Both lakes bundle"
+            priceCents={8499}
+            wasCents={12998}
+            description="Combine any two Daytime Circuit legs to visit Lake Louise and Moraine in a single day."
+            note="Save $44.99 vs two single trips"
+            accent
           />
-        )}
-        {activeTab === 'evening' && (
-          <EveningPanel routes={eveningRoutes} onBook={() => onOpenBooking('evening-return')} />
-        )}
-      </div>
+          <PriceCard
+            eyebrow="Most popular"
+            title="Round-trip circuit"
+            priceCents={8499}
+            wasCents={19497}
+            description="All three Daytime Circuit legs — see both lakes and return to your starting stop."
+            note="Save $109.98 vs three single trips"
+            primary
+          />
+        </ul>
 
-      {/* Advisory — card grid with iconography to differentiate urgency */}
+        <p className="mt-4 text-xs text-mist-500 dark:text-mist-400">
+          Bundle discounts apply automatically at checkout when you add qualifying Daytime Circuit legs.
+        </p>
+      </section>
+
+      <ScheduleInteractive />
+
+      {/* Advisory — static, server-rendered for SEO */}
       <aside className="mt-10">
         <div className="flex items-baseline justify-between gap-4">
           <h3 className="font-display text-lg font-bold text-mist-900 dark:text-white">
@@ -197,35 +107,87 @@ export default function ScheduleDashboard({ onOpenBooking }: ScheduleDashboardPr
   );
 }
 
-function FilterSelect({
-  id, label, value, onChange, options, icon,
+function PriceCard({
+  eyebrow,
+  title,
+  priceCents,
+  wasCents,
+  description,
+  note,
+  primary = false,
+  accent = false,
 }: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-  icon?: string;
+  eyebrow: string;
+  title: string;
+  priceCents: number;
+  wasCents?: number;
+  description: string;
+  note: string;
+  primary?: boolean;
+  accent?: boolean;
 }) {
+  const dollars = Math.floor(priceCents / 100);
+  const cents = (priceCents % 100).toString().padStart(2, '0');
+  const wasDollars = wasCents !== undefined ? (wasCents / 100).toFixed(2) : null;
+
   return (
-    <div>
-      <label htmlFor={id} className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-mist-500 dark:text-mist-400">
-        {icon && <span aria-hidden className="text-sunrise-500">{icon}</span>}
-        {label}
-      </label>
-      <select
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-mist-200 bg-white px-3.5 py-3 text-sm font-medium text-mist-900 outline-none transition focus:border-evergreen-500 focus:ring-2 focus:ring-evergreen-500/20 dark:border-evergreen-700/60 dark:bg-evergreen-950/60 dark:text-white dark:focus:border-sunrise-400 dark:focus:ring-sunrise-400/20"
+    <li
+      className={`relative flex flex-col gap-4 rounded-2xl p-6 transition ${
+        primary
+          ? 'bg-evergreen-800 text-white shadow-[var(--shadow-card-hover)] dark:bg-sunrise-500 dark:text-evergreen-950'
+          : 'bg-white shadow-[var(--shadow-card)] ring-1 ring-mist-200/60 dark:bg-evergreen-900 dark:ring-evergreen-700/30'
+      } ${accent && !primary ? 'ring-2 ring-sunrise-300 dark:ring-sunrise-500/40' : ''}`}
+    >
+      <span
+        className={`inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] ${
+          primary
+            ? 'bg-white/15 text-white dark:bg-evergreen-950/25 dark:text-evergreen-950'
+            : accent
+              ? 'bg-sunrise-100 text-sunrise-700 dark:bg-sunrise-500/15 dark:text-sunrise-300'
+              : 'bg-mist-100 text-mist-500 dark:bg-evergreen-950/40 dark:text-mist-400'
+        }`}
       >
-        {options.map((o) => (
-          <option key={o.value} value={o.value} className="bg-white text-mist-900 dark:bg-evergreen-900 dark:text-white">
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </div>
+        {eyebrow}
+      </span>
+
+      <div>
+        <p className={`font-display text-lg font-bold leading-tight ${primary ? '' : 'text-mist-900 dark:text-white'}`}>
+          {title}
+        </p>
+        <div className="mt-3 flex items-baseline gap-2">
+          <span className={`font-display text-4xl font-extrabold tracking-tighter tabular-nums ${primary ? '' : 'text-mist-900 dark:text-white'}`}>
+            ${dollars}
+            <span className="text-2xl">.{cents}</span>
+          </span>
+          <span className={`text-xs font-semibold uppercase tracking-[0.12em] ${primary ? 'text-white/70 dark:text-evergreen-950/70' : 'text-mist-400 dark:text-mist-500'}`}>
+            CAD / seat
+          </span>
+        </div>
+        {wasDollars && (
+          <p className={`mt-1 text-xs font-medium tabular-nums ${primary ? 'text-white/70 dark:text-evergreen-950/70' : 'text-mist-500 dark:text-mist-400'}`}>
+            <span className="line-through">${wasDollars}</span>
+            <span className="ml-1.5">if booked separately</span>
+          </p>
+        )}
+      </div>
+
+      <p className={`text-sm leading-relaxed ${primary ? 'text-white/85 dark:text-evergreen-950/85' : 'text-mist-500 dark:text-mist-300'}`}>
+        {description}
+      </p>
+
+      <p
+        className={`mt-auto inline-flex items-center gap-1.5 text-xs font-semibold ${
+          primary
+            ? 'text-white dark:text-evergreen-950'
+            : accent
+              ? 'text-sunrise-700 dark:text-sunrise-300'
+              : 'text-mist-500 dark:text-mist-400'
+        }`}
+      >
+        <span aria-hidden>{primary || accent ? '✓' : '·'}</span>
+        {note}
+      </p>
+    </li>
   );
 }
 
@@ -300,225 +262,5 @@ function DraftIcon() {
       <path d="M14 3v5h5" />
       <path d="M9 13h6M9 17h4" />
     </svg>
-  );
-}
-
-function RouteSummary({
-  stops, durationLabel, loop = false,
-}: {
-  stops: string[];
-  durationLabel?: string;
-  loop?: boolean;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-        {stops.map((stop, i) => (
-          <React.Fragment key={`${stop}-${i}`}>
-            <span className="inline-flex items-center gap-2">
-              <span aria-hidden className="size-2 rounded-full bg-sunrise-500 ring-[3px] ring-sunrise-500/15" />
-              <span className="font-display text-sm font-bold text-mist-900 dark:text-white">{stop}</span>
-            </span>
-            {i < stops.length - 1 && (
-              <span aria-hidden className="text-mist-300 dark:text-mist-500">→</span>
-            )}
-          </React.Fragment>
-        ))}
-      </div>
-      <div className="ml-auto flex flex-wrap items-center gap-1.5">
-        {loop && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-mist-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-mist-500 dark:bg-evergreen-950/40 dark:text-mist-400">
-            <span aria-hidden>↻</span> loop
-          </span>
-        )}
-        {durationLabel && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-evergreen-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-evergreen-700 tabular-nums dark:bg-evergreen-700/30 dark:text-evergreen-200">
-            <span aria-hidden>⏱</span> {durationLabel}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return (
-    <th className="bg-mist-50 px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-mist-500 dark:bg-evergreen-950/40 dark:text-mist-400">
-      {children}
-    </th>
-  );
-}
-
-function Time({ value, muted = false }: { value: string; muted?: boolean }) {
-  return (
-    <span className={`font-display tabular-nums ${muted ? 'text-mist-400 dark:text-mist-500' : 'text-mist-900 dark:text-white'} text-base font-semibold`}>
-      {value}
-    </span>
-  );
-}
-
-function BookButton({ onClick, disabled, label = 'Book' }: { onClick: () => void; disabled?: boolean; label?: string }) {
-  if (disabled) {
-    return (
-      <span className="inline-flex cursor-not-allowed items-center rounded-lg border border-mist-200 px-3 py-1.5 text-xs font-semibold text-mist-400 dark:border-evergreen-700/50 dark:text-mist-500">
-        {label}
-      </span>
-    );
-  }
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex items-center gap-1.5 rounded-lg bg-evergreen-800 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-evergreen-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sunrise-400/40 dark:bg-sunrise-500 dark:text-evergreen-950 dark:hover:bg-sunrise-400"
-    >
-      {label}
-      <span aria-hidden>→</span>
-    </button>
-  );
-}
-
-function SunrisePanel({
-  routes, onBook, origin, dest,
-}: {
-  routes: typeof sunriseRoutes;
-  onBook: () => void;
-  origin: string;
-  dest: string;
-}) {
-  return (
-    <div className="animate-fade-in">
-      <div className="border-b border-mist-200 px-6 py-5 dark:border-evergreen-700/40">
-        <RouteSummary stops={['Banff', 'Moraine Lake']} durationLabel="1h 30m direct" />
-        <p className="mt-3 text-sm text-mist-500 dark:text-mist-400">
-          Premium 4:30 AM departure direct to Moraine Lake. Positioning legs are internal only.
-        </p>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <Th>Route</Th>
-              <Th>Departs</Th>
-              <Th>Arrives</Th>
-              <Th>Service</Th>
-              <Th>Action</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {routes.map((r, i) => {
-              const isPositioning = r.type === 'Positioning';
-              const map = ['banff','moraine','lakeshore'];
-              const dMap = ['moraine','lakeshore','samson'];
-              const isMatch = (origin === 'all' || map[i] === origin) && (dest === 'all' || dMap[i] === dest);
-              return (
-                <tr
-                  key={r.id}
-                  className={`border-t border-mist-100 transition dark:border-evergreen-700/20 ${
-                    i % 2 === 1 ? 'bg-mist-50/40 dark:bg-evergreen-950/20' : ''
-                  } ${isMatch ? '' : 'opacity-40'}`}>
-                  <td className="px-5 py-3.5 font-medium text-mist-900 dark:text-white">{r.route}</td>
-                  <td className="px-5 py-3.5"><Time value={r.depart} muted={isPositioning} /></td>
-                  <td className="px-5 py-3.5"><Time value={r.arrive} muted={isPositioning} /></td>
-                  <td className="px-5 py-3.5">
-                    {isPositioning ? (
-                      <span className="inline-flex items-center rounded-full bg-mist-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-mist-500 dark:bg-evergreen-950/50 dark:text-mist-400">
-                        Positioning
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-sunrise-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-sunrise-700 dark:bg-sunrise-500/15 dark:text-sunrise-300">
-                        Premium
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <BookButton onClick={onBook} disabled={isPositioning} label={isPositioning ? 'Internal' : 'Book'} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function DaytimePanel({ circuits, onBook }: { circuits: typeof daytimeCircuits; onBook: () => void }) {
-  return (
-    <div className="animate-fade-in">
-      <div className="border-b border-mist-200 px-6 py-5 dark:border-evergreen-700/40">
-        <RouteSummary
-          stops={['Samson Mall', 'Lake Louise Lakeshore', 'Moraine Lake', 'Samson Mall']}
-          durationLabel="1h 50m"
-          loop
-        />
-        <p className="mt-3 text-sm text-mist-500 dark:text-mist-400">
-          Five loops per day from Samson Mall. Book any circuit below.
-        </p>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <Th>Circuit</Th>
-              <Th>Samson Mall</Th>
-              <Th>Lakeshore</Th>
-              <Th>Moraine</Th>
-              <Th>Back to Samson</Th>
-              <Th>Action</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {circuits.map((c, i) => (
-              <tr
-                key={c.id}
-                className={`border-t border-mist-100 transition hover:bg-sunrise-50/60 dark:border-evergreen-700/20 dark:hover:bg-evergreen-800/40 ${
-                  i % 2 === 1 ? 'bg-mist-50/40 dark:bg-evergreen-950/20' : ''
-                }`}>
-                <td className="px-5 py-3.5 font-semibold text-mist-900 dark:text-white">{c.name}</td>
-                <td className="px-5 py-3.5"><Time value={c.samson} /></td>
-                <td className="px-5 py-3.5"><Time value={c.lakeshore} /></td>
-                <td className="px-5 py-3.5"><Time value={c.moraine} /></td>
-                <td className="px-5 py-3.5"><Time value={c.returnSamson} /></td>
-                <td className="px-5 py-3.5"><BookButton onClick={onBook} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function EveningPanel({ routes, onBook }: { routes: typeof eveningRoutes; onBook: () => void }) {
-  return (
-    <div className="animate-fade-in">
-      <div className="border-b border-mist-200 px-6 py-5 dark:border-evergreen-700/40">
-        <RouteSummary stops={['Lake Louise Lakeshore', 'Banff']} durationLabel="1h 15m" />
-        <p className="mt-3 text-sm text-mist-500 dark:text-mist-400">Single evening departure back to Banff. Reservations recommended.</p>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <Th>Route</Th>
-              <Th>Departs</Th>
-              <Th>Arrives</Th>
-              <Th>Action</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {routes.map((r) => (
-              <tr key={r.id} className="border-t border-mist-200 dark:border-evergreen-700/30">
-                <td className="px-5 py-3.5 font-medium text-mist-900 dark:text-white">{r.route}</td>
-                <td className="px-5 py-3.5"><Time value={r.depart} /></td>
-                <td className="px-5 py-3.5"><Time value={r.arrive} /></td>
-                <td className="px-5 py-3.5"><BookButton onClick={onBook} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
   );
 }

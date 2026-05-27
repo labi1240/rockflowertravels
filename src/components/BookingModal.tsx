@@ -1,22 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import type { StripeElementsOptions } from '@stripe/stripe-js';
 import { getStripe } from '@/lib/stripe-client';
-
-interface BookingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  initialRoute: string;
-}
+import { useBookingModal } from '@/store/booking-modal';
 
 type RouteId = 'sunrise-express' | 'daytime-circuit' | 'evening-return';
 
 const ROUTE_META: Record<RouteId, { name: string; price: number; defaultTime: string }> = {
-  'sunrise-express': { name: 'Sunrise Express (Premium)',     price: 45, defaultTime: '4:30 AM (Banff → Moraine)' },
-  'daytime-circuit': { name: 'Daytime Repeating Circuit',     price: 25, defaultTime: '7:00 AM' },
-  'evening-return':  { name: 'Evening Return (Banff bound)',  price: 20, defaultTime: '6:00 PM (Lakeshore → Banff)' },
+  'sunrise-express': { name: 'Sunrise Express (Premium)',     price: 64.99, defaultTime: '4:30 AM (Banff → Moraine)' },
+  'daytime-circuit': { name: 'Daytime Repeating Circuit',     price: 64.99, defaultTime: '7:00 AM' },
+  'evening-return':  { name: 'Evening Return (Banff bound)',  price: 64.99, defaultTime: '6:00 PM (Lakeshore → Banff)' },
 };
 
 const TIME_OPTIONS: Record<RouteId, { value: string; label: string }[]> = {
@@ -47,7 +42,13 @@ const TIME_OPTIONS: Record<RouteId, { value: string; label: string }[]> = {
 
 type Step = 1 | 2 | 3 | 4;
 
-export default function BookingModal({ isOpen, onClose, initialRoute }: BookingModalProps) {
+export default function BookingModal() {
+  const isOpen = useBookingModal((s) => s.isOpen);
+  const initialRoute = useBookingModal((s) => s.initialRoute);
+  const initialDate = useBookingModal((s) => s.initialDate);
+  const initialPassengers = useBookingModal((s) => s.initialPassengers);
+  const closeModal = useBookingModal((s) => s.close);
+
   const [step, setStep] = useState<Step>(1);
   const [route, setRoute] = useState<RouteId>('daytime-circuit');
   const [time, setTime] = useState<string>('');
@@ -58,17 +59,22 @@ export default function BookingModal({ isOpen, onClose, initialRoute }: BookingM
   const [phone, setPhone] = useState<string>('');
   const [ticketRef, setTicketRef] = useState<string>('');
   const [clientSecret, setClientSecret] = useState<string>('');
+  const [holdExpiresAt, setHoldExpiresAt] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>('');
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (initialRoute && initialRoute in ROUTE_META) {
-      const r = initialRoute as RouteId;
-      setRoute(r);
-      setTime(ROUTE_META[r].defaultTime);
+    if (!isOpen) return;
+    if (initialRoute in ROUTE_META) {
+      setRoute(initialRoute);
+      setTime(ROUTE_META[initialRoute].defaultTime);
     }
-  }, [initialRoute, isOpen]);
+    if (initialDate) setDate(initialDate);
+    if (typeof initialPassengers === 'number' && initialPassengers >= 1 && initialPassengers <= 8) {
+      setPassengers(initialPassengers);
+    }
+  }, [initialRoute, initialDate, initialPassengers, isOpen]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const meta = ROUTE_META[route];
@@ -100,9 +106,10 @@ export default function BookingModal({ isOpen, onClose, initialRoute }: BookingM
         const { error } = await res.json().catch(() => ({ error: 'Payment setup failed' }));
         throw new Error(error || 'Payment setup failed');
       }
-      const data = await res.json() as { clientSecret: string; reference: string };
+      const data = await res.json() as { clientSecret: string; reference: string; holdExpiresAt: string };
       setClientSecret(data.clientSecret);
       setTicketRef(data.reference);
+      setHoldExpiresAt(data.holdExpiresAt);
       setStep(3);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Could not start payment');
@@ -117,8 +124,8 @@ export default function BookingModal({ isOpen, onClose, initialRoute }: BookingM
 
   const handleClose = () => {
     setStep(1); setName(''); setEmail(''); setPhone('');
-    setClientSecret(''); setTicketRef(''); setSubmitError('');
-    onClose();
+    setClientSecret(''); setTicketRef(''); setHoldExpiresAt(''); setSubmitError('');
+    closeModal();
   };
 
   const handleRouteChange = (next: RouteId) => {
@@ -159,9 +166,9 @@ export default function BookingModal({ isOpen, onClose, initialRoute }: BookingM
 
                     <Field label="Service" htmlFor="modal-route">
                       <Select id="modal-route" value={route} onChange={(v) => handleRouteChange(v as RouteId)}>
-                        <option value="sunrise-express">Sunrise Express (Premium) — $45</option>
-                        <option value="daytime-circuit">Daytime Repeating Circuit — $25</option>
-                        <option value="evening-return">Evening Return — $20</option>
+                        <option value="sunrise-express">Sunrise Express (Premium) — $64.99</option>
+                        <option value="daytime-circuit">Daytime Repeating Circuit — $64.99</option>
+                        <option value="evening-return">Evening Return — $64.99</option>
                       </Select>
                     </Field>
 
@@ -287,8 +294,10 @@ export default function BookingModal({ isOpen, onClose, initialRoute }: BookingM
                     clientSecret={clientSecret}
                     total={total}
                     email={email}
+                    holdExpiresAt={holdExpiresAt}
                     onSuccess={handlePaymentSuccess}
-                    onBack={() => { setStep(2); setClientSecret(''); }}
+                    onCancel={handleClose}
+                    onExpire={() => { setStep(2); setClientSecret(''); setHoldExpiresAt(''); setSubmitError('Your reservation hold expired. Please try again.'); }}
                   />
                 )}
               </div>
@@ -403,7 +412,7 @@ function TripSummary({
           <SummaryCell label="Date" value={date} />
           <SummaryCell label="Departs" value={time || '—'} highlight />
           <SummaryCell label="Passengers" value={`${passengers}`} />
-          <SummaryCell label="Per seat" value={`$${routePrice.toFixed(0)}`} />
+          <SummaryCell label="Per seat" value={`$${routePrice.toFixed(2)}`} />
         </div>
 
         <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
@@ -556,8 +565,8 @@ function BoardingPass({
         </div>
 
         <div className="mt-4 rounded-lg bg-white p-3">
-          <div className="flex h-9 items-stretch gap-[1px]">
-            {Array.from({ length: 60 }).map((_, i) => (
+          <div className="flex h-9 items-stretch justify-between">
+            {Array.from({ length: 90 }).map((_, i) => (
               <span
                 key={i}
                 className="bg-mist-900"
@@ -599,13 +608,15 @@ function PassCell({
 }
 
 function PaymentStep({
-  clientSecret, total, email, onSuccess, onBack,
+  clientSecret, total, email, holdExpiresAt, onSuccess, onCancel, onExpire,
 }: {
   clientSecret: string;
   total: number;
   email: string;
+  holdExpiresAt: string;
   onSuccess: () => void;
-  onBack: () => void;
+  onCancel: () => void;
+  onExpire: () => void;
 }) {
   const options: StripeElementsOptions = {
     clientSecret,
@@ -645,27 +656,107 @@ function PaymentStep({
 
   return (
     <Elements stripe={getStripe()} options={options}>
-      <PaymentForm total={total} email={email} onSuccess={onSuccess} onBack={onBack} />
+      <PaymentForm
+        total={total}
+        email={email}
+        holdExpiresAt={holdExpiresAt}
+        onSuccess={onSuccess}
+        onCancel={onCancel}
+        onExpire={onExpire}
+      />
     </Elements>
   );
 }
 
+function formatHold(msRemaining: number): string {
+  const s = Math.max(0, Math.floor(msRemaining / 1000));
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function HoldTimer({ holdExpiresAt, onExpire }: { holdExpiresAt: string; onExpire: () => void }) {
+  const [now, setNow] = useState(() => Date.now());
+  const deadline = new Date(holdExpiresAt).getTime();
+  const remaining = deadline - now;
+  const expiredRef = useRef(false);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (remaining <= 0 && !expiredRef.current) {
+      expiredRef.current = true;
+      onExpire();
+    }
+  }, [remaining, onExpire]);
+
+  const warn = remaining < 60_000;
+
+  return (
+    <div
+      className={`flex items-start gap-3 rounded-xl p-4 ring-1 ${
+        warn
+          ? 'bg-red-50 ring-red-200 dark:bg-red-500/10 dark:ring-red-500/30'
+          : 'bg-evergreen-50 ring-evergreen-200 dark:bg-evergreen-950/40 dark:ring-evergreen-700/40'
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-full ${
+          warn
+            ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-200'
+            : 'bg-evergreen-100 text-evergreen-700 dark:bg-evergreen-700/40 dark:text-evergreen-200'
+        }`}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+      </span>
+      <div className="flex-1 text-xs leading-relaxed text-mist-700 dark:text-mist-200">
+        <p className="font-semibold text-mist-900 dark:text-white">
+          Your reservation is being held for{' '}
+          <span className="font-mono tabular-nums">{formatHold(remaining)}</span>
+        </p>
+        <p className="mt-0.5">
+          Closing this payment dialog releases the hold and you will need to reserve again.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function PaymentForm({
-  total, email, onSuccess, onBack,
+  total, email, holdExpiresAt, onSuccess, onCancel, onExpire,
 }: {
   total: number;
   email: string;
+  holdExpiresAt: string;
   onSuccess: () => void;
-  onBack: () => void;
+  onCancel: () => void;
+  onExpire: () => void;
 }) {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [expired, setExpired] = useState(false);
+
+  const handleExpire = () => {
+    setExpired(true);
+    onExpire();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements) return;
+    if (expired) {
+      setError('Your reservation hold expired. Please start a new booking.');
+      return;
+    }
 
     setSubmitting(true);
     setError('');
@@ -704,7 +795,18 @@ function PaymentForm({
         </p>
       </header>
 
+      <HoldTimer holdExpiresAt={holdExpiresAt} onExpire={handleExpire} />
+
       <PaymentElement options={{ layout: 'tabs' }} />
+
+      <p className="text-xs leading-relaxed text-mist-500 dark:text-mist-400">
+        By providing your card information, you allow RockFlower Travels Inc. to charge your card
+        for this booking and any related fees in accordance with our{' '}
+        <a href="/privacy-policy" className="font-semibold text-evergreen-700 underline-offset-2 hover:underline dark:text-sunrise-300">
+          privacy policy
+        </a>{' '}
+        and terms.
+      </p>
 
       {error && (
         <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:bg-red-500/10 dark:text-red-300">
@@ -715,18 +817,18 @@ function PaymentForm({
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={onBack}
+          onClick={onCancel}
           disabled={submitting}
-          className="rounded-xl px-4 py-3 text-sm font-semibold text-mist-500 transition hover:text-mist-900 disabled:opacity-40 dark:text-mist-300 dark:hover:text-white"
+          className="rounded-xl border border-mist-200 px-5 py-3.5 text-sm font-semibold text-mist-700 transition hover:border-mist-300 hover:bg-mist-50 disabled:opacity-40 dark:border-evergreen-700/60 dark:text-mist-200 dark:hover:bg-evergreen-800/40"
         >
-          ← Back
+          Cancel
         </button>
         <button
           type="submit"
-          disabled={!stripe || !elements || submitting}
-          className={`${CTA_CLASS} flex-1 disabled:cursor-wait disabled:opacity-70`}
+          disabled={!stripe || !elements || submitting || expired}
+          className={`${CTA_CLASS} flex-1 disabled:cursor-not-allowed disabled:opacity-60`}
         >
-          {submitting ? 'Processing…' : `Pay $${total.toFixed(2)} CAD`}
+          {submitting ? 'Processing…' : expired ? 'Hold expired' : `Pay now (C$${total.toFixed(2)})`}
         </button>
       </div>
 

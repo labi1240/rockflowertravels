@@ -13,11 +13,11 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
 const hm = (h: number, m: number) => h * 60 + m;
 
 const PRICES = {
-  SUNRISE_BANFF_MORAINE: 8900,        // $89 CAD
-  DAYTIME_SAMSON_LL: 1500,            // $15
-  DAYTIME_LL_MORAINE: 1500,           // $15
-  DAYTIME_MORAINE_SAMSON: 2500,       // $25 (longer return leg)
-  EVENING_LL_BANFF: 2500,             // $25
+  SUNRISE_BANFF_MORAINE: 6499,        // $64.99 CAD per seat
+  DAYTIME_SAMSON_LL: 6499,            // $64.99
+  DAYTIME_LL_MORAINE: 6499,           // $64.99
+  DAYTIME_MORAINE_SAMSON: 6499,       // $64.99
+  EVENING_LL_BANFF: 6499,             // $64.99
 };
 
 async function main() {
