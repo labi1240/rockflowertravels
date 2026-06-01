@@ -123,8 +123,6 @@ export default async function MyTripsPage() {
   );
 }
 
-type Booking = Awaited<ReturnType<typeof prisma.booking.findMany>>[number];
-
 function BookingList({
   title,
   emptyHint,
@@ -133,7 +131,7 @@ function BookingList({
 }: {
   title: string;
   emptyHint: string;
-  bookings: Booking[];
+  bookings: BookingRow[];
   muted?: boolean;
 }) {
   return (
