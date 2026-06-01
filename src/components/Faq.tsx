@@ -26,18 +26,18 @@ export default function Faq() {
   return (
     <section id="faq" className="mx-auto max-w-4xl px-6 py-24">
       <header className="text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-sunrise-200 bg-sunrise-50 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-sunrise-700 dark:border-sunrise-500/30 dark:bg-sunrise-500/10 dark:text-sunrise-300">
+        <span className="inline-flex items-center gap-2 rounded-full border border-sunrise-200 bg-sunrise-50 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-sunrise-700">
           <span aria-hidden className="size-1.5 rounded-full bg-sunrise-500" />
           {TOTAL_QUESTIONS} answers, no marketing fluff
         </span>
-        <h2 className="mt-5 font-display text-4xl font-extrabold leading-[1.02] tracking-tighter text-mist-900 dark:text-white sm:text-5xl">
+        <h2 className="mt-5 font-display text-4xl font-extrabold leading-[1.02] tracking-tighter text-evergreen-800 sm:text-5xl">
           Frequently asked
         </h2>
-        <p className="mt-4 text-base text-mist-500 dark:text-mist-300">
+        <p className="mt-4 text-base text-mist-500">
           Quick answers about routes, pricing, and policies. Still stuck? Email{' '}
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
-            className="font-semibold text-evergreen-700 underline decoration-sunrise-400 decoration-2 underline-offset-4 hover:text-evergreen-800 dark:text-sunrise-300 dark:hover:text-sunrise-200"
+            className="font-semibold text-evergreen-700 underline decoration-sunrise-400 decoration-2 underline-offset-4 hover:text-evergreen-800"
           >
             {SUPPORT_EMAIL}
           </a>{' '}
@@ -49,25 +49,32 @@ export default function Faq() {
         {/* Booking & pricing */}
         <FaqGroup label="Booking & pricing" count={4} icon={<TicketIcon />}>
           <FaqItem question="How much does the shuttle cost?">
-            All seats are <strong>$64.99 CAD</strong> per person, per leg. Combine two Daytime Circuit
-            legs for the <strong>Both Lakes bundle ($84.99)</strong> or three legs for the{' '}
-            <strong>Round-trip circuit ($84.99)</strong>. 5% GST is added at checkout.
+            Prices are per seat in CAD and depend on where you&apos;re going:
+            <ul className="mt-2 ml-4 list-disc space-y-1">
+              <li><strong>Banff → Lake Louise</strong> — $65.99 (daytime)</li>
+              <li><strong>Banff → Lake Louise + Moraine Lake</strong> — $89.99, plus a $5 Moraine Lake toll per guest</li>
+              <li><strong>Lake Louise ⇄ Moraine Lake</strong> — $89.99 (round trip, both directions)</li>
+              <li><strong>Sunrise Express, Banff → Lake Louise</strong> — $79.99</li>
+              <li><strong>Sunrise Express, Banff → Moraine Lake</strong> — $99.98</li>
+            </ul>
+            <span className="mt-2 block">5% GST is added at checkout, calculated on the fare plus any toll.</span>
           </FaqItem>
-          <FaqItem question="What's the difference between the Both Lakes and Round-trip bundles?">
-            Both are priced at $84.99 CAD. The <strong>Both Lakes bundle</strong> covers any two
-            Daytime Circuit legs — enough to reach Lake Louise Lakeshore and Moraine Lake in one
-            day. The <strong>Round-trip circuit</strong> covers all three legs of a Daytime Circuit
-            so you return to your starting stop. The discount applies automatically at checkout
-            when you add qualifying legs.
+          <FaqItem question="Is the Lake Louise ⇄ Moraine Lake ticket round trip?">
+            Yes. The <strong>Lake Louise ⇄ Moraine Lake</strong> direct shuttle is $89.99 CAD and a
+            single ticket covers <strong>both directions</strong> — Lake Louise to Moraine and back.
+            You do not need to buy a separate return.
           </FaqItem>
-          <FaqItem question="Are prices one-way or round-trip?">
-            Listed prices are per seat, per leg. The bundle pricing is what makes round-trip
-            travel cheaper — three single legs would cost $194.97; the Round-trip bundle is $84.99
-            for the same itinerary.
+          <FaqItem question="What's the $5 toll on the Both Lakes route?">
+            The <strong>Banff → Lake Louise + Moraine Lake</strong> fare ($89.99) includes a{' '}
+            <strong>$5.00 Moraine Lake toll per guest</strong>, charged because Moraine Lake access is
+            restricted. The toll is added to your fare and 5% GST is applied to the combined total at
+            checkout.
           </FaqItem>
-          <FaqItem question="Can I bundle the Sunrise Express or Evening Return?">
-            No. Bundle pricing applies to <strong>Daytime Circuit</strong> legs only. The Sunrise
-            Express and Evening Return are standalone services at $64.99 CAD per seat.
+          <FaqItem question="Why does the price change depending on where I go?">
+            Each route is priced separately. A short Banff → Lake Louise hop ($65.99) costs less than
+            visiting both lakes ($89.99 + toll) or a premium Sunrise Express departure
+            ($79.99–$99.98). The exact price for your selection is shown live in the booking window
+            before you pay.
           </FaqItem>
         </FaqGroup>
 
@@ -107,9 +114,9 @@ export default function Faq() {
             late arrivals will miss the shuttle.
           </FaqItem>
           <FaqItem question="Can I visit both lakes in a single trip?">
-            Yes. The Daytime Circuit loops through Lake Louise Lakeshore and Moraine Lake on every
-            run, and the <strong>Both Lakes bundle ($84.99)</strong> is priced exactly for this —
-            two legs lets you see both shores and return to a Village stop.
+            Yes. The <strong>Banff → Lake Louise + Moraine Lake</strong> fare ($89.99, plus the $5
+            Moraine Lake toll) is priced exactly for this — one ticket takes you to both shores in a
+            single day.
           </FaqItem>
         </FaqGroup>
 
@@ -136,19 +143,19 @@ function FaqGroup({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-card)] ring-1 ring-mist-200/60 dark:bg-evergreen-900 dark:ring-evergreen-700/30">
-      <header className="flex items-center gap-4 border-b border-mist-100 px-6 py-5 dark:border-evergreen-700/30">
+    <section className="overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-card)] ring-1 ring-mist-200/60">
+      <header className="flex items-center gap-4 border-b border-mist-200 px-6 py-5">
         <span
           aria-hidden
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-sunrise-100 text-sunrise-700 dark:bg-sunrise-500/15 dark:text-sunrise-300"
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-sunrise-100 text-sunrise-700"
         >
           {icon}
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="font-display text-lg font-extrabold tracking-tight text-mist-900 dark:text-white">
+          <h3 className="font-display text-lg font-extrabold tracking-tight text-mist-900">
             {label}
           </h3>
-          <p className="text-xs text-mist-500 dark:text-mist-400">
+          <p className="text-xs text-mist-500">
             {count} {count === 1 ? 'question' : 'questions'}
           </p>
         </div>
@@ -168,41 +175,41 @@ function FaqItem({
   todo?: boolean;
 }) {
   return (
-    <details className="group border-t border-mist-100 first:border-t-0 dark:border-evergreen-700/20">
-      <summary className="relative flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 text-left transition-colors [&::-webkit-details-marker]:hidden hover:bg-mist-50/80 group-open:bg-sunrise-50/40 dark:hover:bg-evergreen-950/30 dark:group-open:bg-sunrise-500/5">
+    <details className="group border-t border-mist-200 first:border-t-0">
+      <summary className="relative flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 text-left transition-colors [&::-webkit-details-marker]:hidden hover:bg-mist-50/80 group-open:bg-sunrise-50/40">
         {/* Accent stripe — only visible when open */}
         <span
           aria-hidden
           className="absolute inset-y-0 left-0 w-1 origin-top scale-y-0 bg-sunrise-500 transition-transform duration-200 group-open:scale-y-100"
         />
-        <span className="font-display text-base font-semibold leading-snug text-mist-900 dark:text-white sm:text-[17px]">
+        <span className="font-display text-base font-semibold leading-snug text-mist-900 sm:text-[17px]">
           {question}
         </span>
         <span
           aria-hidden
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-mist-100 text-mist-500 transition-all duration-200 group-hover:bg-mist-200 group-open:rotate-180 group-open:bg-evergreen-800 group-open:text-white dark:bg-evergreen-950/40 dark:text-mist-300 dark:group-hover:bg-evergreen-950/70 dark:group-open:bg-sunrise-500 dark:group-open:text-evergreen-950"
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-mist-100 text-mist-500 transition-all duration-200 group-hover:bg-mist-200 group-open:rotate-180 group-open:bg-evergreen-800 group-open:text-white"
         >
           <ChevronIcon />
         </span>
       </summary>
-      <div className="px-6 pb-6 pt-1 text-[15px] leading-relaxed text-mist-600 dark:text-mist-300">
+      <div className="px-6 pb-6 pt-1 text-[15px] leading-relaxed text-mist-700">
         {todo ? (
-          <div className="flex items-start gap-3 rounded-xl bg-sunrise-50 p-4 ring-1 ring-sunrise-200 dark:bg-sunrise-500/10 dark:ring-sunrise-500/30">
+          <div className="flex items-start gap-3 rounded-xl bg-sunrise-50 p-4 ring-1 ring-sunrise-200">
             <span
               aria-hidden
-              className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-sunrise-200 text-sunrise-800 dark:bg-sunrise-500/30 dark:text-sunrise-200"
+              className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-sunrise-200 text-sunrise-800"
             >
               <svg viewBox="0 0 16 16" fill="currentColor" className="size-3.5">
                 <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM7 4.5h2v5H7v-5zm0 6h2v2H7v-2z" />
               </svg>
             </span>
             <div>
-              <p className="font-display text-xs font-bold uppercase tracking-[0.14em] text-sunrise-700 dark:text-sunrise-300">
+              <p className="font-display text-xs font-bold uppercase tracking-[0.14em] text-sunrise-700">
                 Policy pending — do not ship
               </p>
-              <p className="mt-1 text-sm text-mist-700 dark:text-mist-200">
+              <p className="mt-1 text-sm text-mist-700">
                 This answer needs operational input before launch. Replace in{' '}
-                <code className="rounded bg-white/60 px-1.5 py-0.5 font-mono text-[11px] text-mist-900 dark:bg-evergreen-950/40 dark:text-white">
+                <code className="rounded bg-mist-100 px-1.5 py-0.5 font-mono text-[11px] text-mist-900">
                   src/components/Faq.tsx
                 </code>
                 .

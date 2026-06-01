@@ -1,9 +1,12 @@
 import { create } from 'zustand';
+import type { FareId } from '@/lib/fares';
 
-export type BookingRouteId =
-  | 'sunrise-express'
-  | 'daytime-circuit'
-  | 'evening-return';
+// Booking selection is keyed by fare product (origin → destination + tier), the
+// single source of truth in src/lib/fares.ts. Kept as an alias so existing imports
+// of `BookingRouteId` keep working.
+export type BookingRouteId = FareId;
+
+const DEFAULT_FARE: FareId = 'banff-ll-moraine';
 
 interface BookingModalOpenOptions {
   date?: string;
@@ -21,10 +24,10 @@ interface BookingModalState {
 
 export const useBookingModal = create<BookingModalState>((set) => ({
   isOpen: false,
-  initialRoute: 'daytime-circuit',
+  initialRoute: DEFAULT_FARE,
   initialDate: undefined,
   initialPassengers: undefined,
-  open: (route = 'daytime-circuit', opts) =>
+  open: (route = DEFAULT_FARE, opts) =>
     set({
       isOpen: true,
       initialRoute: route,

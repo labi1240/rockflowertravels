@@ -14,19 +14,19 @@ const COMPANY = 'RockFlower Travels Inc.';
 export default function PrivacyPolicyPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-6 pb-24 pt-16 sm:pt-24">
-      <header className="border-b border-mist-200 pb-8 dark:border-evergreen-700/40">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-evergreen-700 dark:text-sunrise-300">
+      <header className="border-b border-mist-200 pb-8">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-evergreen-700">
           Legal
         </p>
-        <h1 className="mt-2 font-display text-4xl font-extrabold tracking-tight text-mist-900 dark:text-white sm:text-5xl">
+        <h1 className="mt-2 font-display text-4xl font-extrabold tracking-tight text-mist-900 sm:text-5xl">
           Privacy Policy
         </h1>
-        <p className="mt-3 text-sm text-mist-500 dark:text-mist-400">
+        <p className="mt-3 text-sm text-mist-500">
           Effective {EFFECTIVE_DATE}
         </p>
       </header>
 
-      <div className="prose-rockflower mt-10 space-y-10 text-[15px] leading-relaxed text-mist-700 dark:text-mist-200">
+      <div className="prose-rockflower mt-10 space-y-10 text-[15px] leading-relaxed text-mist-700">
         <Section title="1. Who we are">
           <p>
             {COMPANY} (&ldquo;RockFlower&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) operates a
@@ -39,22 +39,22 @@ export default function PrivacyPolicyPage() {
         <Section title="2. Information we collect">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong className="text-mist-900 dark:text-white">Booking details</strong> — your
+              <strong className="text-mist-900">Booking details</strong> — your
               name, email, phone number, travel date, route, pickup location, and number of
               passengers.
             </li>
             <li>
-              <strong className="text-mist-900 dark:text-white">Payment information</strong> — card
+              <strong className="text-mist-900">Payment information</strong> — card
               data is collected and processed directly by Stripe. We receive only a payment
               reference, the last four digits, card brand, and billing postal code.
             </li>
             <li>
-              <strong className="text-mist-900 dark:text-white">Account information</strong> — if
+              <strong className="text-mist-900">Account information</strong> — if
               you sign in, your authentication identifier from Clerk and any profile fields you
               choose to provide.
             </li>
             <li>
-              <strong className="text-mist-900 dark:text-white">Technical data</strong> — IP
+              <strong className="text-mist-900">Technical data</strong> — IP
               address, device type, browser, and pages viewed, captured through standard server
               logs and privacy-respecting analytics.
             </li>
@@ -74,19 +74,19 @@ export default function PrivacyPolicyPage() {
         <Section title="4. Service providers we share data with">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong className="text-mist-900 dark:text-white">Stripe</strong> — payment
+              <strong className="text-mist-900">Stripe</strong> — payment
               processing. Subject to Stripe&rsquo;s privacy policy.
             </li>
             <li>
-              <strong className="text-mist-900 dark:text-white">Clerk</strong> — account
+              <strong className="text-mist-900">Clerk</strong> — account
               authentication if you choose to sign in.
             </li>
             <li>
-              <strong className="text-mist-900 dark:text-white">Vercel</strong> — application
+              <strong className="text-mist-900">Vercel</strong> — application
               hosting, edge network, and operational logs.
             </li>
             <li>
-              <strong className="text-mist-900 dark:text-white">Email and SMS providers</strong> —
+              <strong className="text-mist-900">Email and SMS providers</strong> —
               to send booking confirmations and delay alerts.
             </li>
           </ul>
@@ -142,7 +142,7 @@ export default function PrivacyPolicyPage() {
             Questions or requests? Email us at{' '}
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              className="font-semibold text-evergreen-700 underline-offset-2 hover:underline dark:text-sunrise-300"
+              className="font-semibold text-evergreen-700 underline-offset-2 hover:underline"
             >
               {CONTACT_EMAIL}
             </a>
@@ -151,10 +151,10 @@ export default function PrivacyPolicyPage() {
         </Section>
       </div>
 
-      <div className="mt-12 border-t border-mist-200 pt-8 dark:border-evergreen-700/40">
+      <div className="mt-12 border-t border-mist-200 pt-8">
         <Link
           href="/"
-          className="text-sm font-semibold text-evergreen-700 transition hover:text-evergreen-800 dark:text-sunrise-300 dark:hover:text-sunrise-200"
+          className="text-sm font-semibold text-evergreen-700 transition hover:text-evergreen-800"
         >
           ← Back to home
         </Link>
@@ -166,7 +166,7 @@ export default function PrivacyPolicyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-4">
-      <h2 className="font-display text-xl font-bold tracking-tight text-mist-900 dark:text-white">
+      <h2 className="font-display text-xl font-bold tracking-tight text-mist-900">
         {title}
       </h2>
       {children}

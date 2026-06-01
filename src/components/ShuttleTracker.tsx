@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { BusFront } from 'lucide-react';
 
 interface TrackerState {
   timeString: string;
@@ -194,7 +195,7 @@ export default function ShuttleTracker() {
         {/* Simulator */}
         {!isLive && (
           <div className="border-b border-mist-200 px-6 py-5 dark:border-evergreen-700/40 sm:px-7">
-            <div className="mb-3 flex justify-between text-[11px] font-semibold uppercase tracking-[0.12em] text-mist-400 dark:text-mist-500">
+            <div className="mb-3 flex justify-between text-[11px] font-semibold uppercase tracking-[0.12em] text-mist-500 dark:text-mist-500">
               <span>4:30 AM</span>
               <span>Noon</span>
               <span>6:00 PM</span>
@@ -232,14 +233,14 @@ export default function ShuttleTracker() {
               <span aria-hidden className="absolute right-0 top-1/2 size-4 -translate-y-1/2 rounded-full border-2 border-evergreen-700 bg-white dark:border-sunrise-400 dark:bg-evergreen-900" />
               {trackerState.status !== 'closed' && (
                 <div
-                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl transition-[left] duration-500 ease-out"
+                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-evergreen-800 transition-[left] duration-500 ease-out dark:text-sunrise-400"
                   style={{
                     left: `calc(1rem + (100% - 2rem) * ${trackerState.progressPercent / 100})`,
                     animation: trackerState.status === 'en-route' ? 'busDrive 0.6s infinite ease' : 'none',
                   }}
                   aria-hidden
                 >
-                  🚌
+                  <BusFront className="size-8 drop-shadow-md" />
                 </div>
               )}
             </div>
@@ -256,15 +257,15 @@ export default function ShuttleTracker() {
                 {statusMeta[trackerState.status].label}
               </span>
             </p>
-            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-400 dark:text-mist-500">Status</p>
+            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500 dark:text-mist-500">Status</p>
           </div>
           <div>
             <p className="font-display text-2xl font-extrabold tabular-nums text-mist-900 dark:text-white">
               {trackerState.status === 'closed'
                 ? `${Math.floor(trackerState.etaMins / 60)}h ${trackerState.etaMins % 60}m`
-                : <>{trackerState.etaMins}<span className="ml-1 text-base font-bold text-mist-400 dark:text-mist-500">min</span></>}
+                : <>{trackerState.etaMins}<span className="ml-1 text-base font-bold text-mist-500 dark:text-mist-500">min</span></>}
             </p>
-            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-400 dark:text-mist-500">
+            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500 dark:text-mist-500">
               {trackerState.status === 'closed' ? 'Next departure' : 'Arrives in'}
             </p>
           </div>
@@ -306,7 +307,7 @@ function Telemetry({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="font-display text-base font-bold leading-snug text-mist-900 dark:text-white">{value}</p>
-      <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-400 dark:text-mist-500">{label}</p>
+      <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500 dark:text-mist-500">{label}</p>
     </div>
   );
 }

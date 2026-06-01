@@ -1,3 +1,6 @@
+'use client';
+
+import { motion } from 'motion/react';
 import { LightRays } from '@/components/ui/light-rays';
 import HeroBookingForm from '@/components/HeroBookingForm';
 
@@ -18,47 +21,75 @@ export default function Hero() {
       >
         <source src="/hero_video.mp4" type="video/mp4" />
       </video>
-      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-evergreen-950/95 via-evergreen-950/85 to-evergreen-900/60" />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-evergreen-950/30 via-transparent to-evergreen-950/40" />
+      {/* Cream scrim: near-opaque on the left so dark text stays legible, fading
+          right to reveal the mountain video; vertical layer softens the top for the
+          navbar and melts the bottom into the cream page below. */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-mist-50 via-mist-50/85 to-mist-50/25" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-mist-50/60 via-transparent to-mist-50" />
 
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-32 pt-20 md:pb-40 md:pt-28 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 lg:pb-48 lg:pt-32">
-        {/* Left — narrative (server-rendered for SEO) */}
-        <div className="max-w-2xl animate-fade-in text-white">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-mist-200">
+        {/* Left — narrative */}
+        <motion.div 
+          initial="hidden" 
+          animate="visible" 
+          variants={{
+            hidden: { opacity: 0 },
+            visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
+          }}
+          className="max-w-2xl text-mist-700"
+        >
+          <motion.span
+            variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
+            className="inline-flex items-center gap-2 rounded-full border border-evergreen-700/20 bg-evergreen-700/5 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-evergreen-700"
+          >
             <span aria-hidden className="size-1.5 rounded-full bg-sunrise-400" />
             Premium Rocky Mountain Shuttles
-          </span>
+          </motion.span>
 
-          <h1 className="mt-6 font-display text-4xl font-extrabold leading-[0.98] tracking-tighter text-balance text-white sm:text-5xl lg:text-[3.75rem]">
-            <span className="mb-3 block text-xs font-semibold uppercase tracking-[0.22em] text-mist-300 sm:text-sm">Banff to</span>
-            <span className="block text-sunrise-400">Lake Louise <span className="text-mist-300">&amp;</span> Moraine Lake</span>
-          </h1>
+          <motion.h1 
+            variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
+            className="mt-6 font-display text-4xl font-extrabold leading-[0.98] tracking-tighter text-balance text-mist-900 sm:text-5xl lg:text-[3.75rem]"
+          >
+            <span className="mb-3 block text-xs font-semibold uppercase tracking-[0.22em] text-mist-500 sm:text-sm">Banff to</span>
+            <span className="block text-evergreen-800">Lake Louise <span className="text-mist-400">&amp;</span> Moraine Lake</span>
+          </motion.h1>
 
-          <p className="mt-6 max-w-xl text-base leading-relaxed text-mist-200 sm:text-lg">
+          <motion.p 
+            variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
+            className="mt-6 max-w-xl text-base leading-relaxed text-mist-700 sm:text-lg"
+          >
             Reliable, scenic, premium daily transit. Beat the parking crowds and travel in
             absolute comfort on our state-of-the-art shuttle coaches.
-          </p>
+          </motion.p>
 
-          <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-sm text-mist-200">
+          <motion.ul 
+            variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
+            className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-sm text-mist-700"
+          >
             <li className="inline-flex items-center gap-2">
-              <span aria-hidden className="text-sunrise-400">✦</span>
+              <span aria-hidden className="text-sunrise-500">✦</span>
               <span className="font-medium">Sunrise access at 4:30&nbsp;AM</span>
             </li>
             <li className="inline-flex items-center gap-2">
-              <span aria-hidden className="text-sunrise-400">✦</span>
+              <span aria-hidden className="text-sunrise-500">✦</span>
               <span className="font-medium">Buses depart on time</span>
             </li>
             <li className="inline-flex items-center gap-2">
-              <span aria-hidden className="text-sunrise-400">✦</span>
+              <span aria-hidden className="text-sunrise-500">✦</span>
               <span className="font-medium">Reserved seating</span>
             </li>
-          </ul>
-        </div>
+          </motion.ul>
+        </motion.div>
 
         {/* Right — booking card (client island) */}
-        <div className="w-full animate-fade-in [animation-delay:120ms]">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4, duration: 0.6, type: 'spring' }}
+          className="w-full"
+        >
           <HeroBookingForm />
-        </div>
+        </motion.div>
       </div>
     </section>
   );

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -q -m 'feat: add user sync, fares lib, my-trips, map UI, and component refinements *)"
+    ]
+  }
+}

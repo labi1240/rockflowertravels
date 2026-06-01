@@ -158,6 +158,13 @@ model Booking {
   guestLastName  String?
   guestPhone     String?
 
+  // Trip snapshot — denormalized from checkout input so the dashboard can render
+  // route/date/time without joining through BookingLeg → TripLeg → Trip → Template.
+  // Frozen at hold time; later schedule changes don't shift what the rider sees.
+  routeKind      RouteKind?
+  serviceDate    DateTime?     @db.Date
+  departureTime  String?                              // "07:00", "4:30 AM" — exactly as displayed
+
   status         BookingStatus @default(PENDING_PAYMENT)
   holdExpiresAt  DateTime?                            // 15-min seat hold; null once CONFIRMED
 
@@ -174,7 +181,8 @@ model Booking {
   payment        Payment?
 
   @@index([status, holdExpiresAt])
-  @@index([userId])
+  @@index([userId, serviceDate])
+  @@index([guestEmail])
 }
 
 model BookingLeg {

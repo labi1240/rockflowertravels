@@ -29,17 +29,21 @@
   --color-sunrise-800: hsl(36, 76%, 26%);
   --color-sunrise-900: hsl(34, 72%, 18%);
 
-  /* Mist — tinted neutral. Greys with a hint of the brand (RUI: greys don't have to be grey). */
-  --color-mist-50:  hsl(180, 14%, 97%);
-  --color-mist-100: hsl(180, 12%, 93%);
-  --color-mist-200: hsl(185, 10%, 86%);
-  --color-mist-300: hsl(190, 8%, 72%);
-  --color-mist-400: hsl(195, 8%, 56%);
-  --color-mist-500: hsl(200, 9%, 42%);
-  --color-mist-600: hsl(205, 12%, 30%);
-  --color-mist-700: hsl(210, 16%, 22%);
-  --color-mist-800: hsl(215, 20%, 14%);
-  --color-mist-900: hsl(220, 24%, 8%);
+  /* Cream — warm tinted neutral. The dominant 60%: cream surfaces at the light end,
+     warm charcoal text at the dark end. (RUI: greys don't have to be grey — give
+     neutrals a consistent warm hue, push saturation at the extremes so they don't
+     wash out.) Token still named `mist` so existing utilities keep resolving. */
+  --color-mist-50:  hsl(42, 44%, 97%);
+  --color-mist-100: hsl(42, 38%, 94%);
+  --color-mist-200: hsl(40, 28%, 88%);
+  --color-mist-300: hsl(38, 20%, 79%);
+  --color-mist-400: hsl(34, 13%, 64%);
+  --color-mist-500: hsl(30, 10%, 47%);
+  --color-mist-600: hsl(28, 12%, 36%);
+  --color-mist-700: hsl(26, 15%, 27%);
+  --color-mist-800: hsl(24, 19%, 18%);
+  --color-mist-900: hsl(24, 24%, 12%);
+  --color-mist-950: hsl(24, 28%, 7%);
 
   /* Legacy aliases — keep existing components working during refactor */
   --color-primary: var(--color-evergreen-700);
@@ -53,10 +57,11 @@
   --font-display: var(--font-outfit), system-ui, -apple-system, sans-serif;
   --font-sans: var(--font-plus-jakarta), system-ui, -apple-system, sans-serif;
 
-  /* Two-layer shadows (RUI: shadows can have two parts — ambient + direct) */
-  --shadow-card:         0 1px 2px hsl(168 60% 8% / 0.04), 0 4px 12px hsl(168 60% 8% / 0.06);
-  --shadow-card-hover:   0 2px 4px hsl(168 60% 8% / 0.05), 0 12px 28px hsl(168 60% 8% / 0.10);
-  --shadow-elevated:     0 4px 8px hsl(168 60% 8% / 0.08), 0 24px 48px hsl(168 60% 8% / 0.14);
+  /* Two-layer shadows (RUI: shadows can have two parts — ambient + direct).
+     Warm-tinted so they sit naturally on cream rather than reading cold/grey. */
+  --shadow-card:         0 1px 2px hsl(24 30% 10% / 0.04), 0 4px 12px hsl(24 30% 10% / 0.06);
+  --shadow-card-hover:   0 2px 4px hsl(24 30% 10% / 0.05), 0 12px 28px hsl(24 30% 10% / 0.10);
+  --shadow-elevated:     0 4px 8px hsl(24 30% 10% / 0.08), 0 24px 48px hsl(24 30% 10% / 0.14);
   --shadow-glow-sunrise: 0 0 0 1px hsl(41 78% 50% / 0.20), 0 8px 24px hsl(41 78% 40% / 0.25);
 
   --animate-fade-in: fadeIn 0.4s ease-out forwards;
@@ -65,46 +70,52 @@
 }
 
 :root {
-  --bg: hsl(180, 14%, 97%);
-  --text: hsl(220, 24%, 12%);
-  --background:  oklch(1 0 0);
-  --foreground:  oklch(0.145 0 0);
-  --card:  oklch(1 0 0);
-  --card-foreground:  oklch(0.145 0 0);
-  --popover:  oklch(1 0 0);
-  --popover-foreground:  oklch(0.145 0 0);
-  --primary:  oklch(0.205 0 0);
-  --primary-foreground:  oklch(0.985 0 0);
-  --secondary:  oklch(0.97 0 0);
-  --secondary-foreground:  oklch(0.205 0 0);
-  --muted:  oklch(0.97 0 0);
-  --muted-foreground:  oklch(0.556 0 0);
-  --accent:  oklch(0.97 0 0);
-  --accent-foreground:  oklch(0.205 0 0);
+  /* Page surface = lightest cream; text = warm charcoal (never pure black). */
+  --bg: var(--color-mist-50);
+  --text: var(--color-mist-900);
+  /* shadcn semantic tokens, bound to the cream/evergreen/sunrise ramps so every
+     primitive (cards, popovers, inputs, buttons) inherits the warm system. */
+  --background:  var(--color-mist-50);
+  --foreground:  var(--color-mist-900);
+  /* Cards lift off the cream page with a near-white warm surface (RUI: depth via
+     subtle surface shift, not heavy borders). */
+  --card:  hsl(42, 50%, 99%);
+  --card-foreground:  var(--color-mist-900);
+  --popover:  hsl(42, 50%, 99%);
+  --popover-foreground:  var(--color-mist-900);
+  --primary:  var(--color-evergreen-700);
+  --primary-foreground:  var(--color-mist-50);
+  --secondary:  var(--color-mist-100);
+  --secondary-foreground:  var(--color-mist-900);
+  --muted:  var(--color-mist-100);
+  --muted-foreground:  var(--color-mist-500);
+  --accent:  var(--color-sunrise-100);
+  --accent-foreground:  var(--color-sunrise-900);
   --destructive:  oklch(0.577 0.245 27.325);
-  --border:  oklch(0.922 0 0);
-  --input:  oklch(0.922 0 0);
-  --ring:  oklch(0.708 0 0);
-  --chart-1:  oklch(0.87 0 0);
-  --chart-2:  oklch(0.556 0 0);
-  --chart-3:  oklch(0.439 0 0);
-  --chart-4:  oklch(0.371 0 0);
-  --chart-5:  oklch(0.269 0 0);
+  --border:  var(--color-mist-200);
+  --input:  var(--color-mist-200);
+  --ring:  var(--color-evergreen-600);
+  --chart-1:  var(--color-evergreen-500);
+  --chart-2:  var(--color-sunrise-500);
+  --chart-3:  var(--color-evergreen-300);
+  --chart-4:  var(--color-sunrise-300);
+  --chart-5:  var(--color-mist-400);
   --radius:  0.625rem;
-  --sidebar:  oklch(0.985 0 0);
-  --sidebar-foreground:  oklch(0.145 0 0);
-  --sidebar-primary:  oklch(0.205 0 0);
-  --sidebar-primary-foreground:  oklch(0.985 0 0);
-  --sidebar-accent:  oklch(0.97 0 0);
-  --sidebar-accent-foreground:  oklch(0.205 0 0);
-  --sidebar-border:  oklch(0.922 0 0);
-  --sidebar-ring:  oklch(0.708 0 0);
+  --sidebar:  hsl(42, 50%, 99%);
+  --sidebar-foreground:  var(--color-mist-900);
+  --sidebar-primary:  var(--color-evergreen-700);
+  --sidebar-primary-foreground:  var(--color-mist-50);
+  --sidebar-accent:  var(--color-mist-100);
+  --sidebar-accent-foreground:  var(--color-mist-900);
+  --sidebar-border:  var(--color-mist-200);
+  --sidebar-ring:  var(--color-evergreen-600);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: hsl(168, 50%, 5%);
-    --text: hsl(180, 14%, 95%);
+    /* Warm dark fallback — deep evergreen-charcoal, warm cream text. */
+    --bg: var(--color-evergreen-950);
+    --text: var(--color-mist-100);
   }
 }
 
@@ -131,12 +142,20 @@ body {
   flex-direction: column;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.015em;
-  color: var(--text);
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    color: var(--text);
+  }
+  .mapboxgl-popup-content, .maplibregl-popup-content {
+    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+  }
+  .mapboxgl-popup-tip, .maplibregl-popup-tip {
+    @apply hidden!;
+  }
 }
 
 @keyframes fadeIn {

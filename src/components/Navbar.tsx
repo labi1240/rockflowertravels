@@ -14,6 +14,7 @@ const TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
 
 export default function Navbar() {
   const [mountainTime, setMountainTime] = useState<string>('');
+  const [scrolled, setScrolled] = useState(false);
   const { isLoaded, isSignedIn } = useUser();
   const openBooking = useBookingModal((s) => s.open);
 
@@ -21,19 +22,31 @@ export default function Navbar() {
     const update = () => setMountainTime(TIME_FORMATTER.format(new Date()));
     update();
     const interval = setInterval(update, 30_000);
-    return () => clearInterval(interval);
+
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('scroll', onScroll);
+    };
   }, []);
 
   return (
-    <header className="fixed w-full top-0 z-50 border-b border-white/5 bg-evergreen-950/40 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-2xl backdrop-saturate-200">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-4">
+    <header className={`fixed w-full top-0 z-50 transition-all duration-500 ${
+      scrolled 
+        ? 'border-b border-mist-200 bg-mist-50/80 shadow-[var(--shadow-card)] backdrop-blur-2xl backdrop-saturate-200 py-1'
+        : 'border-transparent bg-transparent py-4'
+    }`}>
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6">
         <a 
           href="#" 
           className="group flex items-center transition-transform hover:scale-[1.02] active:scale-95" 
           aria-label="Rock Flower Travels Inc. — home"
         >
+          {/* Hero is cream now, so the bar sits on a light surface in both states — dark logo throughout. */}
           <Image
-            src="/white_logo.png"
+            src="/main_logo.png"
             alt="Rock Flower Travels Inc."
             width={400}
             height={195}
@@ -42,7 +55,7 @@ export default function Navbar() {
           />
         </a>
 
-        <nav className="hidden items-center rounded-full border border-white/10 bg-white/5 px-2 py-1.5 shadow-inner md:flex md:gap-1">
+        <nav className="hidden items-center rounded-full border border-mist-200 bg-mist-100 px-2 py-1.5 shadow-inner md:flex md:gap-1">
           <NavLink href="#schedule">Schedules</NavLink>
           <NavLink href="#tracker">Live Tracker</NavLink>
           <NavLink href="#map">Route Map</NavLink>
@@ -57,44 +70,44 @@ export default function Navbar() {
             Book Shuttle
           </button>
 
-          <div className="h-6 w-px bg-white/10 hidden md:block mx-1" />
+          <div className="h-6 w-px bg-mist-200 hidden md:block mx-1" />
 
           {!isLoaded ? (
-            <div className="h-9 w-24 animate-pulse rounded-full bg-white/10" />
+            <div className="h-9 w-24 animate-pulse rounded-full bg-mist-200" />
           ) : isSignedIn ? (
             <>
               <a
                 href="/my-trips"
-                className="hidden rounded-full px-4 py-2 text-sm font-medium text-mist-200 transition-all hover:bg-white/10 hover:text-white sm:inline-flex"
+                className="hidden rounded-full px-4 py-2 text-sm font-medium text-mist-700 transition-all hover:bg-mist-100 hover:text-evergreen-700 sm:inline-flex"
               >
                 My Trips
               </a>
-              <div className="rounded-full ring-2 ring-white/10 transition-all hover:ring-sunrise-400/50 p-0.5">
+              <div className="rounded-full ring-2 ring-mist-200 transition-all hover:ring-sunrise-400/50 p-0.5">
                 <UserButton appearance={{ elements: { avatarBox: 'size-8' } }} />
               </div>
             </>
           ) : (
             <div className="flex items-center gap-1">
               <SignInButton mode="modal">
-                <button className="rounded-full px-4 py-2 text-sm font-medium text-mist-200 transition-all hover:bg-white/10 hover:text-white active:scale-95">
+                <button className="rounded-full px-4 py-2 text-sm font-medium text-mist-700 transition-all hover:bg-mist-100 hover:text-evergreen-700 active:scale-95">
                   Sign in
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white shadow-sm backdrop-blur-md transition-all hover:bg-white/10 hover:border-white/30 active:scale-95">
+                <button className="rounded-full border border-mist-200 bg-white px-4 py-2 text-sm font-medium text-mist-900 shadow-sm backdrop-blur-md transition-all hover:bg-mist-100 hover:border-mist-300 active:scale-95">
                   Sign up
                 </button>
               </SignUpButton>
             </div>
           )}
 
-          <div className="group relative ml-1 hidden items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs backdrop-blur-md transition-all hover:border-sunrise-400/30 hover:bg-black/40 lg:inline-flex cursor-default">
+          <div className="group relative ml-1 hidden items-center gap-2 rounded-full border border-mist-200 bg-mist-100 px-3 py-1.5 text-xs backdrop-blur-md transition-all hover:border-sunrise-400/30 hover:bg-mist-200 lg:inline-flex cursor-default">
             <span aria-hidden className="relative flex size-2 items-center justify-center">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sunrise-400 opacity-75"></span>
               <span className="relative inline-flex size-2 rounded-full bg-sunrise-500 shadow-[0_0_8px_hsla(41,80%,58%,0.8)]"></span>
             </span>
-            <span className="font-semibold uppercase tracking-widest text-mist-300 transition-colors group-hover:text-mist-200">Banff</span>
-            <span className="font-display font-bold tabular-nums text-white drop-shadow-md">{mountainTime || '—:—'}</span>
+            <span className="font-semibold uppercase tracking-widest text-mist-500 transition-colors group-hover:text-mist-700">Banff</span>
+            <span className="font-display font-bold tabular-nums text-mist-900">{mountainTime || '—:—'}</span>
           </div>
         </div>
       </div>
@@ -106,7 +119,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <a
       href={href}
-      className="relative rounded-full px-4 py-2 text-sm font-medium text-mist-200 transition-all duration-300 hover:text-white hover:bg-white/10 active:scale-95"
+      className="relative rounded-full px-4 py-2 text-sm font-medium text-mist-700 transition-all duration-300 hover:text-evergreen-700 hover:bg-mist-100 active:scale-95"
     >
       {children}
     </a>

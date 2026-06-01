@@ -3,41 +3,34 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import type { StripeElementsOptions } from '@stripe/stripe-js';
+import { motion, AnimatePresence } from 'motion/react';
 import { getStripe } from '@/lib/stripe-client';
 import { useBookingModal } from '@/store/booking-modal';
+import {
+  FARES,
+  FARES_BY_TIER,
+  TIERS,
+  formatCents,
+  isFareId,
+  quote,
+  type FareId,
+} from '@/lib/fares';
 
-type RouteId = 'sunrise-express' | 'daytime-circuit' | 'evening-return';
+const DAYTIME_TIMES: { value: string; label: string }[] = [
+  { value: '7:00 AM',  label: '7:00 AM — Circuit 1' },
+  { value: '9:00 AM',  label: '9:00 AM — Circuit 2' },
+  { value: '11:00 AM', label: '11:00 AM — Circuit 3' },
+  { value: '1:30 PM',  label: '1:30 PM — Circuit 4' },
+  { value: '3:30 PM',  label: '3:30 PM — Circuit 5' },
+];
 
-const ROUTE_META: Record<RouteId, { name: string; price: number; defaultTime: string }> = {
-  'sunrise-express': { name: 'Sunrise Express (Premium)',     price: 64.99, defaultTime: '4:30 AM (Banff → Moraine)' },
-  'daytime-circuit': { name: 'Daytime Repeating Circuit',     price: 64.99, defaultTime: '7:00 AM' },
-  'evening-return':  { name: 'Evening Return (Banff bound)',  price: 64.99, defaultTime: '6:00 PM (Lakeshore → Banff)' },
-};
-
-const TIME_OPTIONS: Record<RouteId, { value: string; label: string }[]> = {
-  'sunrise-express': [
-    { value: '4:30 AM (Banff → Moraine)', label: '4:30 AM — Banff → Moraine Lake' },
-  ],
-  'evening-return': [
-    { value: '6:00 PM (Lakeshore → Banff)', label: '6:00 PM — Lake Louise Lakeshore → Banff' },
-  ],
-  'daytime-circuit': [
-    { value: '7:00 AM',  label: '7:00 AM (Circuit 1 — Samson Mall)'   },
-    { value: '7:15 AM',  label: '7:15 AM (Circuit 1 — LL Lakeshore)'  },
-    { value: '7:40 AM',  label: '7:40 AM (Circuit 1 — Moraine Lake)'  },
-    { value: '9:00 AM',  label: '9:00 AM (Circuit 2 — Samson Mall)'   },
-    { value: '9:15 AM',  label: '9:15 AM (Circuit 2 — LL Lakeshore)'  },
-    { value: '9:40 AM',  label: '9:40 AM (Circuit 2 — Moraine Lake)'  },
-    { value: '11:00 AM', label: '11:00 AM (Circuit 3 — Samson Mall)'  },
-    { value: '11:15 AM', label: '11:15 AM (Circuit 3 — LL Lakeshore)' },
-    { value: '11:40 AM', label: '11:40 AM (Circuit 3 — Moraine Lake)' },
-    { value: '1:30 PM',  label: '1:30 PM (Circuit 4 — Samson Mall)'   },
-    { value: '1:45 PM',  label: '1:45 PM (Circuit 4 — LL Lakeshore)'  },
-    { value: '2:10 PM',  label: '2:10 PM (Circuit 4 — Moraine Lake)'  },
-    { value: '3:30 PM',  label: '3:30 PM (Circuit 5 — Samson Mall)'   },
-    { value: '3:45 PM',  label: '3:45 PM (Circuit 5 — LL Lakeshore)'  },
-    { value: '4:10 PM',  label: '4:10 PM (Circuit 5 — Moraine Lake)'  },
-  ],
+const TIME_OPTIONS: Record<FareId, { value: string; label: string }[]> = {
+  'sunrise-banff-moraine': [{ value: '4:30 AM', label: '4:30 AM — Banff → Moraine Lake' }],
+  'sunrise-banff-ll':      [{ value: '4:30 AM', label: '4:30 AM — Banff → Lake Louise' }],
+  'banff-ll':         DAYTIME_TIMES,
+  'banff-ll-moraine': DAYTIME_TIMES,
+  'll-moraine':       DAYTIME_TIMES,
+  'evening-ll-banff': [{ value: '6:00 PM', label: '6:00 PM — Lake Louise → Banff' }],
 };
 
 type Step = 1 | 2 | 3 | 4;
@@ -50,7 +43,7 @@ export default function BookingModal() {
   const closeModal = useBookingModal((s) => s.close);
 
   const [step, setStep] = useState<Step>(1);
-  const [route, setRoute] = useState<RouteId>('daytime-circuit');
+  const [route, setRoute] = useState<FareId>('banff-ll-moraine');
   const [time, setTime] = useState<string>('');
   const [date, setDate] = useState<string>('2026-05-21');
   const [passengers, setPassengers] = useState<number>(1);
@@ -66,9 +59,9 @@ export default function BookingModal() {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!isOpen) return;
-    if (initialRoute in ROUTE_META) {
+    if (isFareId(initialRoute)) {
       setRoute(initialRoute);
-      setTime(ROUTE_META[initialRoute].defaultTime);
+      setTime(FARES[initialRoute].defaultTime);
     }
     if (initialDate) setDate(initialDate);
     if (typeof initialPassengers === 'number' && initialPassengers >= 1 && initialPassengers <= 8) {
@@ -77,10 +70,12 @@ export default function BookingModal() {
   }, [initialRoute, initialDate, initialPassengers, isOpen]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const meta = ROUTE_META[route];
-  const subtotal = meta.price * passengers;
-  const tax = subtotal * 0.05;
-  const total = subtotal + tax;
+  const fare = FARES[route];
+  const q = quote(route, passengers);
+  const fareSubtotal = q.fareCents / 100; // base fare × passengers
+  const toll = q.tollCents / 100; // Moraine toll × passengers
+  const tax = q.gstCents / 100;
+  const total = q.totalCents / 100;
 
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,47 +123,69 @@ export default function BookingModal() {
     closeModal();
   };
 
-  const handleRouteChange = (next: RouteId) => {
+  const handleRouteChange = (next: FareId) => {
     setRoute(next);
-    setTime(ROUTE_META[next].defaultTime);
+    setTime(FARES[next].defaultTime);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-evergreen-950/85 p-4 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true">
-      <div className="relative my-8 w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-elevated)] animate-fade-in dark:bg-evergreen-900 dark:ring-1 dark:ring-evergreen-700/60">
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-mist-950/50 p-4 backdrop-blur-sm sm:items-center"
+          role="dialog"
+          aria-modal="true"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="relative my-8 flex h-[85vh] max-h-[760px] min-h-[560px] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-elevated)] ring-1 ring-mist-200"
+          >
         <button
           aria-label="Close"
           onClick={handleClose}
-          className="absolute right-4 top-4 z-10 grid size-9 place-items-center rounded-full bg-white/90 text-mist-500 shadow-sm backdrop-blur transition hover:bg-white hover:text-mist-900 dark:bg-evergreen-800/80 dark:text-mist-300 dark:hover:bg-evergreen-700 dark:hover:text-white"
+          className="absolute right-4 top-4 z-20 grid size-9 place-items-center rounded-full bg-white/90 text-mist-500 shadow-sm ring-1 ring-mist-200 backdrop-blur transition hover:bg-white hover:text-mist-900"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4"><path d="M6 6l12 12M18 6 6 18" /></svg>
         </button>
 
+        {/* Internal scroll region: content scrolls here while the panel (and its close button) stay fixed. */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
         {step < 4 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr]">
+          <div className="grid min-h-full grid-cols-1 lg:grid-cols-[1.35fr_1fr]">
             {/* Form column */}
-            <div className="bg-white dark:bg-evergreen-900">
+            <div className="bg-white">
               <StepIndicator step={step as 1 | 2 | 3} />
 
               <div className="p-6 sm:p-9">
                 {step === 1 && (
                   <form onSubmit={handleStep1Submit} className="space-y-6">
                     <header>
-                      <h2 className="font-display text-2xl font-extrabold tracking-tight text-mist-900 dark:text-white sm:text-3xl">
+                      <h2 className="font-display text-2xl font-extrabold tracking-tight text-evergreen-800 sm:text-3xl">
                         Configure your shuttle
                       </h2>
-                      <p className="mt-1.5 text-sm text-mist-500 dark:text-mist-400">
+                      <p className="mt-1.5 text-sm text-mist-500">
                         Pick your service, departure and party size.
                       </p>
                     </header>
 
-                    <Field label="Service" htmlFor="modal-route">
-                      <Select id="modal-route" value={route} onChange={(v) => handleRouteChange(v as RouteId)}>
-                        <option value="sunrise-express">Sunrise Express (Premium) — $64.99</option>
-                        <option value="daytime-circuit">Daytime Repeating Circuit — $64.99</option>
-                        <option value="evening-return">Evening Return — $64.99</option>
+                    <Field label="Route" htmlFor="modal-route">
+                      <Select id="modal-route" value={route} onChange={(v) => handleRouteChange(v as FareId)}>
+                        {TIERS.map((tier) => (
+                          <optgroup key={tier.key} label={tier.label}>
+                            {FARES_BY_TIER[tier.key].map((f) => (
+                              <option key={f.id} value={f.id}>
+                                {f.label} — {formatCents(f.priceCents)}
+                                {f.tollCents > 0 ? ` +${formatCents(f.tollCents)} toll` : ''}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
                       </Select>
                     </Field>
 
@@ -210,10 +227,10 @@ export default function BookingModal() {
                 {step === 2 && (
                   <form onSubmit={handleStep2Submit} className="space-y-6">
                     <header>
-                      <h2 className="font-display text-2xl font-extrabold tracking-tight text-mist-900 dark:text-white sm:text-3xl">
+                      <h2 className="font-display text-2xl font-extrabold tracking-tight text-evergreen-800 sm:text-3xl">
                         Who&apos;s travelling?
                       </h2>
-                      <p className="mt-1.5 text-sm text-mist-500 dark:text-mist-400">
+                      <p className="mt-1.5 text-sm text-mist-500">
                         We&apos;ll send your ticket and any delay alerts here.
                       </p>
                     </header>
@@ -254,18 +271,18 @@ export default function BookingModal() {
                       />
                     </Field>
 
-                    <div className="flex items-start gap-3 rounded-xl border-l-4 border-l-evergreen-500 bg-mist-50/80 p-4 dark:bg-evergreen-950/40">
-                      <span aria-hidden className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-evergreen-100 text-evergreen-700 dark:bg-evergreen-700/40 dark:text-evergreen-200">
+                    <div className="flex items-start gap-3 rounded-xl border-l-4 border-l-evergreen-500 bg-evergreen-50 p-4">
+                      <span aria-hidden className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-evergreen-100 text-evergreen-700">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
                       </span>
-                      <p className="text-xs leading-relaxed text-mist-600 dark:text-mist-300">
+                      <p className="text-xs leading-relaxed text-mist-700">
                         Buses depart strictly on schedule. Arrive at your loading area
-                        <strong className="text-mist-900 dark:text-white"> 10 minutes early</strong>.
+                        <strong className="text-mist-900"> 10 minutes early</strong>.
                       </p>
                     </div>
 
                     {submitError && (
-                      <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
+                      <p role="alert" className="text-sm font-medium text-red-600">
                         {submitError}
                       </p>
                     )}
@@ -274,7 +291,7 @@ export default function BookingModal() {
                       <button
                         type="button"
                         onClick={() => setStep(1)}
-                        className="rounded-xl px-4 py-3 text-sm font-semibold text-mist-500 transition hover:text-mist-900 dark:text-mist-300 dark:hover:text-white"
+                        className="rounded-xl px-4 py-3 text-sm font-semibold text-mist-500 transition hover:text-mist-900"
                       >
                         ← Back
                       </button>
@@ -305,39 +322,42 @@ export default function BookingModal() {
 
             {/* Trip summary column */}
             <TripSummary
-              routeName={meta.name}
-              routePrice={meta.price}
+              routeName={fare.label}
+              perSeat={fare.priceCents / 100}
+              tollPerSeat={fare.tollCents / 100}
+              note={fare.note}
               date={date}
               time={time}
               passengers={passengers}
-              subtotal={subtotal}
+              fareSubtotal={fareSubtotal}
+              toll={toll}
               tax={tax}
               total={total}
             />
           </div>
         ) : (
-          <div className="animate-fade-in p-6 sm:p-10">
+          <div className="min-h-full animate-fade-in p-6 sm:p-10">
             <header className="flex flex-col items-center gap-3 text-center">
               <span
-                className="relative grid size-14 place-items-center rounded-full bg-evergreen-700 text-white shadow-[0_0_0_8px_hsl(168_55%_16%/0.08)] dark:bg-sunrise-500 dark:text-evergreen-950"
+                className="relative grid size-14 place-items-center rounded-full bg-evergreen-700 text-white shadow-[0_0_0_8px_hsl(168_55%_16%/0.08)]"
                 aria-hidden
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="size-7">
                   <path d="m5 12 4.5 4.5L19 7" />
                 </svg>
               </span>
-              <h2 className="font-display text-2xl font-extrabold tracking-tight text-mist-900 dark:text-white sm:text-3xl">
+              <h2 className="font-display text-2xl font-extrabold tracking-tight text-evergreen-800 sm:text-3xl">
                 Reservation confirmed
               </h2>
-              <p className="text-sm text-mist-500 dark:text-mist-300">
-                Confirmation sent to <strong className="text-mist-900 dark:text-white">{email}</strong>
+              <p className="text-sm text-mist-500">
+                Confirmation sent to <strong className="text-mist-900">{email}</strong>
               </p>
             </header>
 
             <div className="mx-auto mt-7 max-w-md">
               <BoardingPass
                 name={name}
-                routeName={meta.name}
+                routeName={fare.label}
                 date={date}
                 time={time}
                 passengers={passengers}
@@ -349,27 +369,30 @@ export default function BookingModal() {
                 Done — close
               </button>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
+            </div>
+          )}
+        </div>
+        </motion.div>
+      </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
 const INPUT_CLASS =
-  'w-full rounded-xl border border-mist-200 bg-white px-4 py-3.5 text-sm font-medium text-mist-900 outline-none transition placeholder:text-mist-400 focus:border-evergreen-500 focus:ring-4 focus:ring-evergreen-500/15 dark:border-evergreen-700/60 dark:bg-evergreen-950/60 dark:text-white dark:focus:border-sunrise-400 dark:focus:ring-sunrise-400/20';
+  'w-full rounded-xl border border-mist-200 bg-white px-4 py-3.5 text-sm font-medium text-mist-900 outline-none transition placeholder:text-mist-400 focus:border-evergreen-500 focus:bg-white focus:ring-2 focus:ring-evergreen-500/25';
 
 const CTA_CLASS =
-  'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sunrise-500 px-5 py-4 font-display text-sm font-bold text-evergreen-950 shadow-[var(--shadow-glow-sunrise)] transition hover:bg-sunrise-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-sunrise-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-evergreen-900';
+  'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sunrise-500 px-5 py-4 font-display text-sm font-bold text-evergreen-950 shadow-[var(--shadow-glow-sunrise)] transition hover:bg-sunrise-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-sunrise-500 focus-visible:ring-offset-2 focus-visible:ring-offset-mist-50';
 
 function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
   return (
-    <div className="border-b border-mist-200 px-6 py-4 sm:px-9 dark:border-evergreen-700/40">
+    <div className="border-b border-mist-200 px-6 py-4 sm:px-9">
       <div className="flex items-center gap-3">
         <Step n={1} label="Route"   active={step >= 1} />
-        <div className={`h-0.5 flex-1 rounded-full ${step >= 2 ? 'bg-evergreen-700 dark:bg-sunrise-400' : 'bg-mist-200 dark:bg-evergreen-700/40'}`} />
+        <div className={`h-0.5 flex-1 rounded-full ${step >= 2 ? 'bg-evergreen-700' : 'bg-mist-200'}`} />
         <Step n={2} label="Contact" active={step >= 2} />
-        <div className={`h-0.5 flex-1 rounded-full ${step >= 3 ? 'bg-evergreen-700 dark:bg-sunrise-400' : 'bg-mist-200 dark:bg-evergreen-700/40'}`} />
+        <div className={`h-0.5 flex-1 rounded-full ${step >= 3 ? 'bg-evergreen-700' : 'bg-mist-200'}`} />
         <Step n={3} label="Pay"     active={step >= 3} />
       </div>
     </div>
@@ -377,59 +400,69 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
 }
 
 function TripSummary({
-  routeName, routePrice, date, time, passengers, subtotal, tax, total,
+  routeName, perSeat, tollPerSeat, note, date, time, passengers, fareSubtotal, toll, tax, total,
 }: {
   routeName: string;
-  routePrice: number;
+  perSeat: number;
+  tollPerSeat: number;
+  note?: string;
   date: string;
   time: string;
   passengers: number;
-  subtotal: number;
+  fareSubtotal: number;
+  toll: number;
   tax: number;
   total: number;
 }) {
   return (
-    <aside className="relative flex flex-col justify-between gap-8 overflow-hidden bg-evergreen-950 p-6 text-white sm:p-9">
+    <aside className="relative flex flex-col justify-between gap-8 overflow-hidden border-t border-mist-200 bg-mist-100 p-6 text-mist-900 sm:border-l sm:border-t-0 sm:p-9">
       {/* Subtle decorative ridge */}
       <div aria-hidden className="pointer-events-none absolute inset-0 opacity-40 [background:radial-gradient(circle_at_top_right,hsl(41_78%_50%/0.18),transparent_55%)]" />
 
       <div className="relative space-y-6">
         <div className="flex items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-2 font-display text-xs font-bold uppercase tracking-[0.18em] text-white">
+          <span className="inline-flex items-center gap-2 font-display text-xs font-bold uppercase tracking-[0.18em] text-evergreen-700">
             <span aria-hidden>🌸</span> Your trip
           </span>
-          <span className="rounded-full bg-sunrise-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-sunrise-300 ring-1 ring-sunrise-500/30">
+          <span className="rounded-full bg-sunrise-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-sunrise-700 ring-1 ring-sunrise-500/30">
             Live preview
           </span>
         </div>
 
         <div>
-          <p className="font-display text-xl font-extrabold leading-tight tracking-tight text-white">{routeName}</p>
-          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-400">Service</p>
+          <p className="font-display text-xl font-extrabold leading-tight tracking-tight text-evergreen-800">{routeName}</p>
+          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-500">Route</p>
+          {note && <p className="mt-2 text-xs leading-relaxed text-mist-600">{note}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-x-4 gap-y-5">
           <SummaryCell label="Date" value={date} />
           <SummaryCell label="Departs" value={time || '—'} highlight />
           <SummaryCell label="Passengers" value={`${passengers}`} />
-          <SummaryCell label="Per seat" value={`$${routePrice.toFixed(2)}`} />
+          <SummaryCell label="Per seat" value={`$${perSeat.toFixed(2)}`} />
         </div>
 
-        <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
-          <div className="flex items-center justify-between text-xs text-mist-300">
+        <div className="rounded-2xl bg-white p-4 ring-1 ring-mist-200">
+          <div className="flex items-center justify-between text-xs text-mist-700">
             <span>Fare × {passengers}</span>
-            <span className="tabular-nums">${subtotal.toFixed(2)}</span>
+            <span className="tabular-nums">${fareSubtotal.toFixed(2)}</span>
           </div>
-          <div className="mt-1.5 flex items-center justify-between text-xs text-mist-300">
+          {toll > 0 && (
+            <div className="mt-1.5 flex items-center justify-between text-xs text-mist-700">
+              <span>Moraine Lake toll (${tollPerSeat.toFixed(2)} × {passengers})</span>
+              <span className="tabular-nums">${toll.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="mt-1.5 flex items-center justify-between text-xs text-mist-700">
             <span>Alberta GST (5%)</span>
             <span className="tabular-nums">${tax.toFixed(2)}</span>
           </div>
-          <div className="mt-3 border-t border-white/10 pt-3">
+          <div className="mt-3 border-t border-mist-200 pt-3">
             <div className="flex items-end justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-mist-400">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-mist-500">
                 Total · CAD
               </span>
-              <span className="font-display text-3xl font-extrabold tabular-nums text-white sm:text-[2rem]">
+              <span className="font-display text-3xl font-extrabold tabular-nums text-evergreen-800 sm:text-[2rem]">
                 ${total.toFixed(2)}
               </span>
             </div>
@@ -437,7 +470,7 @@ function TripSummary({
         </div>
       </div>
 
-      <ul className="relative space-y-2.5 text-xs text-mist-300">
+      <ul className="relative space-y-2.5 text-xs text-mist-700">
         <TrustItem>Secure payment via Stripe · 128-bit SSL</TrustItem>
         <TrustItem>Free cancellation up to 24h before departure</TrustItem>
         <TrustItem>Confirmation by email and SMS</TrustItem>
@@ -449,8 +482,8 @@ function TripSummary({
 function SummaryCell({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div>
-      <p className={`font-display text-sm font-bold leading-snug ${highlight ? 'text-sunrise-300' : 'text-white'}`}>{value}</p>
-      <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-400">{label}</p>
+      <p className={`font-display text-sm font-bold leading-snug ${highlight ? 'text-sunrise-700' : 'text-mist-900'}`}>{value}</p>
+      <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-500">{label}</p>
     </div>
   );
 }
@@ -458,7 +491,7 @@ function SummaryCell({ label, value, highlight = false }: { label: string; value
 function TrustItem({ children }: { children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-2.5">
-      <span aria-hidden className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-sunrise-500/15 text-sunrise-400">
+      <span aria-hidden className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-sunrise-100 text-sunrise-700">
         <svg viewBox="0 0 16 16" fill="currentColor" className="size-2.5"><path d="M13 4.5 6 11.5 3 8.5l1-1L6 9.5l6-6z" /></svg>
       </span>
       <span className="leading-relaxed">{children}</span>
@@ -472,13 +505,13 @@ function Step({ n, label, active }: { n: number; label: string; active: boolean 
       <span
         className={`grid size-6 place-items-center rounded-full text-[11px] font-bold ${
           active
-            ? 'bg-evergreen-700 text-white dark:bg-sunrise-400 dark:text-evergreen-950'
-            : 'bg-mist-200 text-mist-500 dark:bg-evergreen-700/40 dark:text-mist-400'
+            ? 'bg-evergreen-700 text-white'
+            : 'bg-mist-200 text-mist-500'
         }`}
       >
         {n}
       </span>
-      <span className="text-xs font-semibold text-mist-700 dark:text-mist-200">{label}</span>
+      <span className="text-xs font-semibold text-mist-700">{label}</span>
     </div>
   );
 }
@@ -486,7 +519,7 @@ function Step({ n, label, active }: { n: number; label: string; active: boolean 
 function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-mist-500 dark:text-mist-400">
+      <label htmlFor={htmlFor} className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-mist-500">
         {label}
       </label>
       {children}
@@ -514,13 +547,13 @@ function BoardingPass({
   total: number;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-evergreen-900 text-white shadow-[var(--shadow-elevated)] ring-1 ring-evergreen-700/60">
+    <div className="relative overflow-hidden rounded-2xl bg-white text-mist-900 shadow-[var(--shadow-elevated)] ring-1 ring-mist-200">
       {/* Header */}
-      <div className="flex items-center justify-between bg-evergreen-950 px-5 py-3.5">
-        <span className="inline-flex items-center gap-2 font-display text-xs font-bold uppercase tracking-[0.16em] text-white">
+      <div className="flex items-center justify-between bg-mist-100 px-5 py-3.5">
+        <span className="inline-flex items-center gap-2 font-display text-xs font-bold uppercase tracking-[0.16em] text-mist-900">
           <span aria-hidden>🌸</span> RockFlower Travels
         </span>
-        <span className="rounded-full bg-sunrise-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-sunrise-300 ring-1 ring-sunrise-500/30">
+        <span className="rounded-full bg-sunrise-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-sunrise-700 ring-1 ring-sunrise-500/30">
           Boarding pass
         </span>
       </div>
@@ -528,13 +561,13 @@ function BoardingPass({
       {/* Main — value-first hierarchy: data leads, labels support */}
       <div className="space-y-5 p-5 sm:p-6">
         <div>
-          <p className="font-display text-xl font-extrabold leading-tight tracking-tight text-white">{name || '—'}</p>
-          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-400">Passenger</p>
+          <p className="font-display text-xl font-extrabold leading-tight tracking-tight text-mist-900">{name || '—'}</p>
+          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-500">Passenger</p>
         </div>
 
         <div>
-          <p className="font-display text-base font-bold leading-snug text-white">{routeName}</p>
-          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-400">Route</p>
+          <p className="font-display text-base font-bold leading-snug text-mist-900">{routeName}</p>
+          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-500">Route</p>
         </div>
 
         <div className="grid grid-cols-3 gap-x-4 gap-y-4">
@@ -546,25 +579,25 @@ function BoardingPass({
 
       {/* Perforation — book: Overlap elements to create layers; classic ticket motif */}
       <div className="relative">
-        <span aria-hidden className="absolute -left-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-white dark:bg-evergreen-900" />
-        <span aria-hidden className="absolute -right-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-white dark:bg-evergreen-900" />
-        <div className="border-t border-dashed border-evergreen-700/80" />
+        <span aria-hidden className="absolute -left-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-white" />
+        <span aria-hidden className="absolute -right-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-white" />
+        <div className="border-t border-dashed border-mist-300" />
       </div>
 
       {/* Stub */}
-      <div className="bg-evergreen-950/60 p-5 sm:p-6">
+      <div className="bg-mist-50 p-5 sm:p-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="font-mono text-base font-bold tracking-[0.16em] text-sunrise-300">{ticketRef}</p>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-400">Reference</p>
+            <p className="font-mono text-base font-bold tracking-[0.16em] text-sunrise-700">{ticketRef}</p>
+            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-500">Reference</p>
           </div>
           <div className="text-right">
-            <p className="font-display text-base font-bold tabular-nums text-white">${total.toFixed(2)}</p>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-400">Paid · CAD</p>
+            <p className="font-display text-base font-bold tabular-nums text-mist-900">${total.toFixed(2)}</p>
+            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-500">Paid · CAD</p>
           </div>
         </div>
 
-        <div className="mt-4 rounded-lg bg-white p-3">
+        <div className="mt-4 rounded-lg bg-white p-3 ring-1 ring-mist-200">
           <div className="flex h-9 items-stretch justify-between">
             {Array.from({ length: 90 }).map((_, i) => (
               <span
@@ -582,8 +615,8 @@ function BoardingPass({
           </p>
         </div>
 
-        <p className="mt-4 text-xs leading-relaxed text-mist-300">
-          Arrive <strong className="text-white">10 minutes</strong> before departure and present this pass to the driver.
+        <p className="mt-4 text-xs leading-relaxed text-mist-700">
+          Arrive <strong className="text-mist-900">10 minutes</strong> before departure and present this pass to the driver.
         </p>
       </div>
     </div>
@@ -599,10 +632,10 @@ function PassCell({
 }) {
   return (
     <div>
-      <p className={`font-display text-sm font-bold leading-snug ${highlight ? 'text-sunrise-300' : 'text-white'}`}>
+      <p className={`font-display text-sm font-bold leading-snug ${highlight ? 'text-sunrise-700' : 'text-mist-900'}`}>
         {value}
       </p>
-      <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-400">{label}</p>
+      <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-500">{label}</p>
     </div>
   );
 }
@@ -699,16 +732,16 @@ function HoldTimer({ holdExpiresAt, onExpire }: { holdExpiresAt: string; onExpir
     <div
       className={`flex items-start gap-3 rounded-xl p-4 ring-1 ${
         warn
-          ? 'bg-red-50 ring-red-200 dark:bg-red-500/10 dark:ring-red-500/30'
-          : 'bg-evergreen-50 ring-evergreen-200 dark:bg-evergreen-950/40 dark:ring-evergreen-700/40'
+          ? 'bg-red-50 ring-red-200'
+          : 'bg-evergreen-50 ring-evergreen-200'
       }`}
     >
       <span
         aria-hidden
         className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-full ${
           warn
-            ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-200'
-            : 'bg-evergreen-100 text-evergreen-700 dark:bg-evergreen-700/40 dark:text-evergreen-200'
+            ? 'bg-red-100 text-red-700'
+            : 'bg-evergreen-100 text-evergreen-700'
         }`}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
@@ -716,8 +749,8 @@ function HoldTimer({ holdExpiresAt, onExpire }: { holdExpiresAt: string; onExpir
           <path d="M12 7v5l3 2" />
         </svg>
       </span>
-      <div className="flex-1 text-xs leading-relaxed text-mist-700 dark:text-mist-200">
-        <p className="font-semibold text-mist-900 dark:text-white">
+      <div className="flex-1 text-xs leading-relaxed text-mist-700">
+        <p className="font-semibold text-mist-900">
           Your reservation is being held for{' '}
           <span className="font-mono tabular-nums">{formatHold(remaining)}</span>
         </p>
@@ -787,10 +820,10 @@ function PaymentForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <header>
-        <h2 className="font-display text-2xl font-extrabold tracking-tight text-mist-900 dark:text-white sm:text-3xl">
+        <h2 className="font-display text-2xl font-extrabold tracking-tight text-evergreen-800 sm:text-3xl">
           Payment
         </h2>
-        <p className="mt-1.5 text-sm text-mist-500 dark:text-mist-400">
+        <p className="mt-1.5 text-sm text-mist-500">
           Charged once. We use Stripe — your card never touches our servers.
         </p>
       </header>
@@ -799,17 +832,17 @@ function PaymentForm({
 
       <PaymentElement options={{ layout: 'tabs' }} />
 
-      <p className="text-xs leading-relaxed text-mist-500 dark:text-mist-400">
+      <p className="text-xs leading-relaxed text-mist-500">
         By providing your card information, you allow RockFlower Travels Inc. to charge your card
         for this booking and any related fees in accordance with our{' '}
-        <a href="/privacy-policy" className="font-semibold text-evergreen-700 underline-offset-2 hover:underline dark:text-sunrise-300">
+        <a href="/privacy-policy" className="font-semibold text-evergreen-700 underline-offset-2 hover:underline">
           privacy policy
         </a>{' '}
         and terms.
       </p>
 
       {error && (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:bg-red-500/10 dark:text-red-300">
+        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           {error}
         </p>
       )}
@@ -819,7 +852,7 @@ function PaymentForm({
           type="button"
           onClick={onCancel}
           disabled={submitting}
-          className="rounded-xl border border-mist-200 px-5 py-3.5 text-sm font-semibold text-mist-700 transition hover:border-mist-300 hover:bg-mist-50 disabled:opacity-40 dark:border-evergreen-700/60 dark:text-mist-200 dark:hover:bg-evergreen-800/40"
+          className="rounded-xl border border-mist-200 px-5 py-3.5 text-sm font-semibold text-mist-700 transition hover:border-mist-300 hover:bg-mist-50 disabled:opacity-40"
         >
           Cancel
         </button>
@@ -832,7 +865,7 @@ function PaymentForm({
         </button>
       </div>
 
-      <p className="text-center text-[11px] text-mist-400 dark:text-mist-500">
+      <p className="text-center text-[11px] text-mist-400">
         <span aria-hidden className="mr-1">🔒</span>
         Secured by Stripe · 128-bit SSL · PCI DSS Level 1
       </p>

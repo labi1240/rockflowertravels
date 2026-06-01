@@ -56,12 +56,12 @@ export default function SocialProof() {
       className="mx-auto max-w-7xl px-6 py-20"
     >
       <header className="mx-auto max-w-2xl text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sunrise-600 dark:text-sunrise-400">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sunrise-700">
           Trusted by riders to the lakes
         </p>
         <h2
           id="social-proof-heading"
-          className="mt-3 font-display text-3xl font-extrabold leading-[1.05] tracking-tighter text-mist-900 dark:text-white sm:text-4xl"
+          className="mt-3 font-display text-3xl font-extrabold leading-[1.05] tracking-tighter text-evergreen-800 sm:text-4xl"
         >
           The shuttle locals send first-time visitors on
         </h2>
@@ -78,7 +78,7 @@ export default function SocialProof() {
       </div>
 
       {/* Testimonial cards */}
-      <ul className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <ul className="mt-8 flex gap-6 snap-x snap-mandatory overflow-x-auto pb-4 md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
         {PLACEHOLDER_REVIEWS.map((r) => (
           <ReviewCard key={r.id} {...r} />
         ))}
@@ -96,21 +96,21 @@ function RatingBadge({
   icon: 'google' | 'tripadvisor';
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-[var(--shadow-card)] ring-1 ring-mist-200/60 dark:bg-evergreen-900 dark:ring-evergreen-700/30">
+    <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-[var(--shadow-card)] ring-1 ring-mist-200/60">
       <span
         aria-hidden
-        className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-mist-100 text-mist-500 dark:bg-evergreen-950/40 dark:text-mist-400"
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-mist-100 text-mist-500"
       >
         {icon === 'google' ? <GoogleGlyph /> : <TripadvisorGlyph />}
       </span>
       <div className="min-w-0">
         <div className="flex items-baseline gap-1.5">
-          <span className="font-display text-base font-bold tabular-nums text-mist-900 dark:text-white">
+          <span className="font-display text-base font-bold tabular-nums text-mist-900">
             {rating}
           </span>
           <Stars />
         </div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-mist-500 dark:text-mist-400">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-mist-500">
           {source} · {label}
         </p>
       </div>
@@ -120,11 +120,11 @@ function RatingBadge({
 
 function StatChip({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-[var(--shadow-card)] ring-1 ring-mist-200/60 dark:bg-evergreen-900 dark:ring-evergreen-700/30">
-      <p className="font-display text-xl font-extrabold tracking-tighter tabular-nums text-mist-900 dark:text-white">
+    <div className="rounded-2xl bg-white p-4 shadow-[var(--shadow-card)] ring-1 ring-mist-200/60">
+      <p className="font-display text-xl font-extrabold tracking-tighter tabular-nums text-mist-900">
         {value}
       </p>
-      <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-mist-500 dark:text-mist-400">
+      <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-mist-500">
         {label}
       </p>
     </div>
@@ -140,19 +140,19 @@ function ReviewCard({
   service: string;
 }) {
   return (
-    <li className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-[var(--shadow-card)] ring-1 ring-mist-200/60 dark:bg-evergreen-900 dark:ring-evergreen-700/30">
+    <li className="flex w-[85vw] shrink-0 snap-center flex-col gap-4 rounded-2xl bg-white p-6 shadow-[var(--shadow-card)] ring-1 ring-mist-200/60 md:w-auto">
       <Stars />
-      <p className="text-sm leading-relaxed text-mist-700 dark:text-mist-200">
+      <p className="text-sm leading-relaxed text-mist-700">
         &ldquo;{quote}&rdquo;
       </p>
-      <div className="mt-auto flex items-baseline justify-between gap-3 border-t border-mist-100 pt-3 dark:border-evergreen-700/30">
+      <div className="mt-auto flex items-baseline justify-between gap-3 border-t border-mist-200 pt-3">
         <div className="min-w-0">
-          <p className="font-display text-sm font-bold text-mist-900 dark:text-white">
+          <p className="font-display text-sm font-bold text-mist-900">
             {author}
           </p>
-          <p className="text-xs text-mist-500 dark:text-mist-400">{location}</p>
+          <p className="text-xs text-mist-500">{location}</p>
         </div>
-        <span className="inline-flex shrink-0 items-center rounded-full bg-sunrise-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-sunrise-700 dark:bg-sunrise-500/15 dark:text-sunrise-300">
+        <span className="inline-flex shrink-0 items-center rounded-full bg-sunrise-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-sunrise-700">
           {service}
         </span>
       </div>

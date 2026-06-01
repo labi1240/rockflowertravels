@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
+import { RouteKind } from '@/generated/prisma/enums';
+import { getFare, isFareId, quote, type FareId } from '@/lib/fares';
 
 export const runtime = 'nodejs';
-
-const ROUTE_PRICE_CENTS: Record<string, number> = {
-  'sunrise-express': 6499,
-  'daytime-circuit': 6499,
-  'evening-return':  6499,
-};
-
-const ROUTE_LABEL: Record<string, string> = {
-  'sunrise-express': 'Sunrise Express (Premium)',
-  'daytime-circuit': 'Daytime Repeating Circuit',
-  'evening-return':  'Evening Return',
-};
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -27,7 +18,7 @@ function generateReference(): string {
 }
 
 interface Input {
-  route: keyof typeof ROUTE_PRICE_CENTS;
+  route: FareId;
   date: string;
   time: string;
   passengers: number;
@@ -40,7 +31,7 @@ function validate(body: unknown): { ok: true; data: Input } | { ok: false; error
   if (!body || typeof body !== 'object') return { ok: false, error: 'Body must be an object' };
   const b = body as Record<string, unknown>;
 
-  if (typeof b.route !== 'string' || !(b.route in ROUTE_PRICE_CENTS)) return { ok: false, error: 'Invalid route' };
+  if (!isFareId(b.route)) return { ok: false, error: 'Invalid route' };
   if (typeof b.date !== 'string' || !DATE_RE.test(b.date)) return { ok: false, error: 'Invalid date' };
   if (typeof b.time !== 'string' || b.time.length === 0) return { ok: false, error: 'Invalid time' };
   if (typeof b.passengers !== 'number' || !Number.isInteger(b.passengers) || b.passengers < 1 || b.passengers > 8) return { ok: false, error: 'Invalid passengers' };
@@ -51,7 +42,7 @@ function validate(body: unknown): { ok: true; data: Input } | { ok: false; error
   return {
     ok: true,
     data: {
-      route: b.route as Input['route'],
+      route: b.route,
       date: b.date,
       time: b.time,
       passengers: b.passengers,
@@ -77,21 +68,38 @@ export async function POST(req: NextRequest) {
     }
     const { route, date, time, passengers, name, email, phone } = result.data;
 
-    const unitCents = ROUTE_PRICE_CENTS[route];
-    const subtotalCents = unitCents * passengers;
-    const gstCents = Math.round(subtotalCents * 0.05);
-    const totalCents = subtotalCents + gstCents;
+    // Server-authoritative pricing — never trust amounts from the client.
+    const fare = getFare(route);
+    const { subtotalCents, gstCents, totalCents } = quote(route, passengers);
 
     const [firstName, ...rest] = name.split(/\s+/);
     const lastName = rest.join(' ') || null;
     const reference = generateReference();
     const holdExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
+    // If a Clerk session is present at checkout, upsert the User row and link the booking.
+    // Guest checkouts (no session) leave userId null and rely on later email-match claiming.
+    const { userId: clerkUserId } = await auth();
+    let userId: string | null = null;
+    if (clerkUserId) {
+      const user = await prisma.user.upsert({
+        where: { clerkUserId },
+        create: { clerkUserId, email, firstName, lastName, phone },
+        update: {},
+        select: { id: true },
+      });
+      userId = user.id;
+    }
+
     const booking = await prisma.booking.create({
       data: {
         reference,
+        ...(userId ? { user: { connect: { id: userId } } } : {}),
         status: 'PENDING_PAYMENT',
         holdExpiresAt,
+        routeKind: fare.routeKind as RouteKind,
+        serviceDate: new Date(`${date}T00:00:00Z`),
+        departureTime: time,
         guestEmail: email,
         guestFirstName: firstName,
         guestLastName: lastName,
@@ -117,7 +125,7 @@ export async function POST(req: NextRequest) {
       currency: 'cad',
       automatic_payment_methods: { enabled: true },
       receipt_email: email,
-      description: `${ROUTE_LABEL[route]} · ${date} · ${time}`,
+      description: `${fare.label} · ${date} · ${time}`,
       metadata: {
         bookingId: booking.id,
         reference,

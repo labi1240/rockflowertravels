@@ -10,18 +10,18 @@ const QUICK_LINKS = [
 
 export default function Footer() {
   return (
-    <footer className="mt-auto bg-evergreen-950 text-white">
+    <footer className="mt-auto bg-mist-100 text-mist-700">
       <div className="h-px w-full bg-gradient-to-r from-transparent via-sunrise-500/40 to-transparent" />
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-12 px-6 pb-12 pt-20 lg:grid-cols-[1.3fr_0.7fr_0.7fr_0.7fr]">
         <div>
           <Image
-            src="/white_logo.png"
+            src="/main_logo.png"
             alt="Rock Flower Travels Inc."
             width={400}
             height={195}
             className="h-20 w-auto"
           />
-          <p className="mt-5 max-w-md text-sm leading-relaxed text-mist-300">
+          <p className="mt-5 max-w-md text-sm leading-relaxed text-mist-700">
             Premium transportation across the Canadian Rockies. Experience Banff, Lake Louise,
             and Moraine Lake in comfort on our luxury shuttle coaches.
           </p>
@@ -38,16 +38,16 @@ export default function Footer() {
 
         <FooterColumn title="Contact">
           <li>
-            <a href="mailto:info@rockflowertravels.ca" className="font-display text-base font-bold text-white transition hover:text-sunrise-300">
+            <a href="mailto:info@rockflowertravels.ca" className="font-display text-base font-bold text-mist-900 transition hover:text-sunrise-700">
               info@rockflowertravels.ca
             </a>
           </li>
           <li>
-            <a href="tel:+14035550199" className="font-display text-base font-bold text-white transition hover:text-sunrise-300 tabular-nums">
+            <a href="tel:+14035550199" className="font-display text-base font-bold text-mist-900 transition hover:text-sunrise-700 tabular-nums">
               +1&nbsp;(403)&nbsp;555-0199
             </a>
           </li>
-          <li className="text-sm text-mist-400">Banff Visitor Center</li>
+          <li className="text-sm text-mist-500">Banff Visitor Center</li>
         </FooterColumn>
 
         <FooterColumn title="Legal">
@@ -55,8 +55,8 @@ export default function Footer() {
         </FooterColumn>
       </div>
 
-      <div className="border-t border-evergreen-700/40">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-6 py-5 text-xs text-mist-400 md:flex-row md:items-center md:justify-between">
+      <div className="border-t border-mist-200">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-6 py-5 text-xs text-mist-500 md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} RockFlower Travels Inc. All rights reserved.</p>
           <p className="italic">Buses depart strictly on time — arrive 10 minutes early.</p>
         </div>
@@ -68,7 +68,7 @@ export default function Footer() {
 function FooterColumn({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="font-display text-sm font-semibold uppercase tracking-[0.14em] text-mist-400">
+      <h4 className="font-display text-sm font-semibold uppercase tracking-[0.14em] text-mist-500">
         {title}
       </h4>
       <ul className="mt-4 space-y-2.5">{children}</ul>
@@ -81,7 +81,7 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
     <li>
       <a
         href={href}
-        className="text-sm text-mist-200 transition hover:text-sunrise-300"
+        className="text-sm text-mist-700 transition hover:text-evergreen-700"
       >
         {children}
       </a>

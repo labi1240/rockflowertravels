@@ -8,16 +8,18 @@ export default function ServiceBookButton({
   children,
 }: {
   route: BookingRouteId;
-  variant?: 'primary' | 'ghost';
+  variant?: 'primary' | 'gold' | 'ghost';
   children: React.ReactNode;
 }) {
   const open = useBookingModal((s) => s.open);
 
   const base = 'inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sunrise-400/40';
   const tone =
-    variant === 'primary'
-      ? 'bg-evergreen-800 text-white hover:bg-evergreen-700 dark:bg-sunrise-500 dark:text-evergreen-950 dark:hover:bg-sunrise-400'
-      : 'bg-white/15 text-white ring-1 ring-white/30 backdrop-blur hover:bg-white/25';
+    variant === 'gold'
+      ? 'bg-sunrise-500 text-evergreen-950 hover:bg-sunrise-400'
+      : variant === 'primary'
+      ? 'bg-evergreen-700 text-white hover:bg-evergreen-800'
+      : 'bg-mist-100 text-evergreen-800 ring-1 ring-mist-200 hover:bg-mist-200';
 
   return (
     <button type="button" onClick={() => open(route)} className={`${base} ${tone}`}>

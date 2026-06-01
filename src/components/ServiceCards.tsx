@@ -7,8 +7,13 @@
 //  Orphaned SVG placeholders remain at /public/images/routes/ — safe to delete.
 // ─────────────────────────────────────────────────────────────────────────────
 
+'use client';
+
 import Image from 'next/image';
+import { motion } from 'motion/react';
+import { ShieldCheck, RotateCcw } from 'lucide-react';
 import type { BookingRouteId } from '@/store/booking-modal';
+import { TIER_DEFAULT_FARE, TIER_FROM_CENTS } from '@/lib/fares';
 import ServiceBookButton from '@/components/ServiceBookButton';
 
 type Service = {
@@ -24,34 +29,34 @@ type Service = {
 
 const SERVICES: Service[] = [
   {
-    id: 'sunrise-express',
+    id: TIER_DEFAULT_FARE.sunrise,
     name: 'Sunrise Express',
     eyebrow: 'Premium · isolated inventory',
     window: '4:30 AM departure',
-    description: 'Direct from Banff to Moraine Lake in time for first light. Ideal for photographers, hikers, and early risers.',
-    priceFromCents: 6499,
+    description: 'Premium early departure from Banff. Reach the lakes for first light, ahead of the crowds.',
+    priceFromCents: TIER_FROM_CENTS.sunrise,
     image: '/images/locations/moraine-lake-ten-peaks.jpg',
-    highlights: ['Arrive Moraine 6:00 AM', 'Beat the crowds', 'Premium coach'],
+    highlights: ['Banff → Lake Louise $79.99', 'Banff → Moraine Lake $99.98', 'Premium coach'],
   },
   {
-    id: 'daytime-circuit',
-    name: 'Daytime Circuit',
-    eyebrow: 'Most flexible',
+    id: TIER_DEFAULT_FARE.daytime,
+    name: 'Daytime',
+    eyebrow: 'Most popular',
     window: '7:00 AM – 5:20 PM',
-    description: 'Five repeating loops Samson Mall → Lakeshore → Moraine → Samson. Bundle two or three legs to save.',
-    priceFromCents: 6499,
+    description: 'Daytime service from Banff to the lakes, plus the direct Lake Louise ⇄ Moraine connector.',
+    priceFromCents: TIER_FROM_CENTS.daytime,
     image: '/images/locations/lake-louise-lakeshore.webp',
-    highlights: ['5 daily circuits', 'Both Lakes bundle $84.99', 'Round-trip bundle $84.99'],
+    highlights: ['Banff → Lake Louise $65.99', 'Banff → Both Lakes $89.99 +$5 toll', 'Lake Louise ⇄ Moraine $89.99 round trip'],
   },
   {
-    id: 'evening-return',
+    id: TIER_DEFAULT_FARE.evening,
     name: 'Evening Return',
     eyebrow: 'End-of-day transfer',
     window: '6:00 PM departure',
     description: 'Single late-day departure back to Banff after an afternoon at Lake Louise. Reservations recommended.',
-    priceFromCents: 6499,
+    priceFromCents: TIER_FROM_CENTS.evening,
     image: '/images/locations/banff.jpg',
-    highlights: ['Lakeshore → Banff', 'Arrive 7:15 PM', 'Reserved seating'],
+    highlights: ['Lake Louise → Banff $65.99', 'Arrive 7:15 PM', 'Reserved seating'],
   },
 ];
 
@@ -68,9 +73,14 @@ export default function ServiceCards() {
 function ServiceCard({ service: s }: { service: Service }) {
   const dollars = Math.floor(s.priceFromCents / 100);
   const cents = (s.priceFromCents % 100).toString().padStart(2, '0');
+  const isPremium = s.id === TIER_DEFAULT_FARE.sunrise;
 
   return (
-    <li className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-card)] ring-1 ring-mist-200/60 transition hover:shadow-[var(--shadow-card-hover)] dark:bg-evergreen-900 dark:ring-evergreen-700/30">
+    <motion.li
+      whileHover={{ y: -6, scale: 1.01 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      className={`group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-card)] ring-1 transition-[box-shadow] hover:shadow-[var(--shadow-card-hover)] ${isPremium ? 'ring-sunrise-300' : 'ring-mist-200'}`}
+    >
       {/* Photo */}
       <div className="relative aspect-[16/10] overflow-hidden bg-evergreen-900">
         <Image
@@ -94,13 +104,13 @@ function ServiceCard({ service: s }: { service: Service }) {
 
       {/* Body */}
       <div className="flex flex-1 flex-col gap-4 p-5">
-        <p className="text-sm leading-relaxed text-mist-600 dark:text-mist-300">
+        <p className="text-sm leading-relaxed text-mist-700">
           {s.description}
         </p>
 
         <ul className="space-y-1.5">
           {s.highlights.map((h) => (
-            <li key={h} className="flex items-start gap-2 text-xs text-mist-600 dark:text-mist-300">
+            <li key={h} className="flex items-start gap-2 text-xs text-mist-700">
               <span aria-hidden className="mt-1 inline-block size-1.5 shrink-0 rounded-full bg-sunrise-500" />
               {h}
             </li>
@@ -108,20 +118,26 @@ function ServiceCard({ service: s }: { service: Service }) {
         </ul>
 
         {/* Price + CTAs */}
-        <div className="mt-auto flex items-end justify-between gap-3 border-t border-mist-100 pt-4 dark:border-evergreen-700/30">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-mist-400 dark:text-mist-500">
-              From
-            </p>
-            <p className="font-display text-2xl font-extrabold tracking-tighter tabular-nums text-mist-900 dark:text-white">
-              ${dollars}
-              <span className="text-base">.{cents}</span>
-              <span className="ml-1 text-xs font-semibold text-mist-400 dark:text-mist-500">CAD</span>
-            </p>
+        <div className="mt-auto border-t border-mist-200 pt-4">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-mist-500">
+                From
+              </p>
+              <p className="font-display text-2xl font-extrabold tracking-tighter tabular-nums text-mist-900">
+                ${dollars}
+                <span className="text-base">.{cents}</span>
+                <span className="ml-1 text-xs font-semibold text-mist-500">CAD</span>
+              </p>
+            </div>
+            <ServiceBookButton route={s.id} variant={isPremium ? 'gold' : 'primary'}>Book</ServiceBookButton>
           </div>
-          <ServiceBookButton route={s.id}>Book</ServiceBookButton>
+          <div className="mt-3.5 flex items-center gap-4 text-[9px] font-bold uppercase tracking-[0.15em] text-mist-500">
+            <span className="flex items-center gap-1.5"><ShieldCheck className="size-3.5 text-emerald-500" /> Secure Checkout</span>
+            <span className="flex items-center gap-1.5"><RotateCcw className="size-3.5" /> 24h Free Cancel</span>
+          </div>
         </div>
       </div>
-    </li>
+    </motion.li>
   );
 }

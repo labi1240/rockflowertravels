@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { useBookingModal, type BookingRouteId } from '@/store/booking-modal';
 
+import { Sunrise, Sun, Sunset } from 'lucide-react';
+
 type TabKey = 'sunrise' | 'daytime' | 'evening';
 
-const TABS: { key: TabKey; label: string; window: string; icon: string }[] = [
-  { key: 'sunrise', label: 'Sunrise Express', window: '4:30 AM – 6:50 AM', icon: '🌅' },
-  { key: 'daytime', label: 'Daytime Circuit', window: '7:00 AM – 5:20 PM', icon: '☀️' },
-  { key: 'evening', label: 'Evening Return', window: '6:00 PM departure', icon: '🌇' },
+const TABS: { key: TabKey; label: string; window: string; icon: React.ReactNode }[] = [
+  { key: 'sunrise', label: 'Sunrise Express', window: '4:30 AM – 6:50 AM', icon: <Sunrise className="size-6" /> },
+  { key: 'daytime', label: 'Daytime Circuit', window: '7:00 AM – 5:20 PM', icon: <Sun className="size-6" /> },
+  { key: 'evening', label: 'Evening Return', window: '6:00 PM departure', icon: <Sunset className="size-6" /> },
 ];
 
 const LOCATIONS = [
@@ -128,7 +130,7 @@ export default function ScheduleInteractive() {
         {activeTab === 'sunrise' && (
           <SunrisePanel
             routes={sunriseRoutes}
-            onBook={handleBook('sunrise-express')}
+            onBook={handleBook('sunrise-banff-moraine')}
             origin={searchOrigin}
             dest={searchDestination}
           />
@@ -136,11 +138,11 @@ export default function ScheduleInteractive() {
         {activeTab === 'daytime' && (
           <DaytimePanel
             circuits={daytimeCircuits}
-            onBook={handleBook('daytime-circuit')}
+            onBook={handleBook('banff-ll-moraine')}
           />
         )}
         {activeTab === 'evening' && (
-          <EveningPanel routes={eveningRoutes} onBook={handleBook('evening-return')} />
+          <EveningPanel routes={eveningRoutes} onBook={handleBook('evening-ll-banff')} />
         )}
       </div>
     </>
@@ -269,7 +271,7 @@ function SunrisePanel({
           Premium 4:30 AM departure direct to Moraine Lake. Positioning legs are internal only.
         </p>
       </div>
-      <div className="overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr>
@@ -288,7 +290,9 @@ function SunrisePanel({
                 <tr
                   key={r.id}
                   className={`border-t border-mist-100 transition dark:border-evergreen-700/20 ${
-                    i % 2 === 1 ? 'bg-mist-50/40 dark:bg-evergreen-950/20' : ''
+                    isPositioning
+                      ? (i % 2 === 1 ? 'bg-mist-50/40 dark:bg-evergreen-950/20' : '')
+                      : 'bg-sunrise-50 dark:bg-sunrise-500/5'
                   } ${isMatch ? '' : 'opacity-40'}`}>
                   <td className="px-5 py-3.5 font-medium text-mist-900 dark:text-white">{r.route}</td>
                   <td className="px-5 py-3.5"><Time value={r.depart} muted={isPositioning} /></td>
@@ -313,6 +317,41 @@ function SunrisePanel({
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden flex flex-col gap-3 p-4 bg-mist-50/30 dark:bg-evergreen-950/10">
+        {routes.map((r) => {
+          const isPositioning = r.kind === 'positioning';
+          const isMatch = (origin === 'all' || r.origin === origin) && (dest === 'all' || r.dest === dest);
+          if (!isMatch) return null;
+          return (
+            <div key={r.id} className={`rounded-xl border bg-white p-4 shadow-sm dark:bg-evergreen-900 ${isPositioning ? 'border-mist-200 dark:border-evergreen-700/40' : 'border-sunrise-300 dark:border-sunrise-500/40'}`}>
+              <div className="flex items-start justify-between gap-3">
+                <span className="font-medium text-mist-900 dark:text-white">{r.route}</span>
+                {isPositioning ? (
+                  <span className="inline-flex shrink-0 items-center rounded-full bg-mist-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-mist-500 dark:bg-evergreen-950/50 dark:text-mist-400">Positioning</span>
+                ) : (
+                  <span className="inline-flex shrink-0 items-center rounded-full bg-sunrise-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sunrise-700 dark:bg-sunrise-500/15 dark:text-sunrise-300">Premium</span>
+                )}
+              </div>
+              <div className="mt-3 flex items-center gap-4 text-sm">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-mist-500">Departs</p>
+                  <Time value={r.depart} muted={isPositioning} />
+                </div>
+                <span className="text-mist-300 dark:text-mist-600">→</span>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-mist-500">Arrives</p>
+                  <Time value={r.arrive} muted={isPositioning} />
+                </div>
+              </div>
+              <div className="mt-4">
+                <BookButton onClick={onBook} disabled={isPositioning} label={isPositioning ? 'Internal' : 'Book'} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -330,7 +369,7 @@ function DaytimePanel({ circuits, onBook }: { circuits: typeof daytimeCircuits; 
           Five loops per day from Samson Mall. Book any circuit below.
         </p>
       </div>
-      <div className="overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr>
@@ -360,6 +399,36 @@ function DaytimePanel({ circuits, onBook }: { circuits: typeof daytimeCircuits; 
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden flex flex-col gap-3 p-4 bg-mist-50/30 dark:bg-evergreen-950/10">
+        {circuits.map((c) => (
+          <div key={c.id} className="rounded-xl border border-mist-200 bg-white p-4 shadow-sm dark:border-evergreen-700/40 dark:bg-evergreen-900">
+            <span className="font-semibold text-mist-900 dark:text-white">{c.name}</span>
+            <div className="mt-4 grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-mist-500">Samson Mall</p>
+                <Time value={c.samson} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-mist-500">Lakeshore</p>
+                <Time value={c.lakeshore} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-mist-500">Moraine</p>
+                <Time value={c.moraine} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-mist-500">Return</p>
+                <Time value={c.returnSamson} />
+              </div>
+            </div>
+            <div className="mt-5">
+              <BookButton onClick={onBook} />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -371,7 +440,7 @@ function EveningPanel({ routes, onBook }: { routes: typeof eveningRoutes; onBook
         <RouteSummary stops={['Lake Louise Lakeshore', 'Banff']} durationLabel="1h 15m" />
         <p className="mt-3 text-sm text-mist-500 dark:text-mist-400">Single evening departure back to Banff. Reservations recommended.</p>
       </div>
-      <div className="overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr>
@@ -392,6 +461,29 @@ function EveningPanel({ routes, onBook }: { routes: typeof eveningRoutes; onBook
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden flex flex-col gap-3 p-4 bg-mist-50/30 dark:bg-evergreen-950/10">
+        {routes.map((r) => (
+          <div key={r.id} className="rounded-xl border border-mist-200 bg-white p-4 shadow-sm dark:border-evergreen-700/40 dark:bg-evergreen-900">
+            <span className="font-medium text-mist-900 dark:text-white">{r.route}</span>
+            <div className="mt-4 flex items-center gap-4 text-sm">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-mist-500">Departs</p>
+                <Time value={r.depart} />
+              </div>
+              <span className="text-mist-300 dark:text-mist-600">→</span>
+                                                                                                                                                                                                             <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-mist-500">Arrives</p>
+                <Time value={r.arrive} />
+              </div>
+            </div>
+            <div className="mt-4">
+              <BookButton onClick={onBook} />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

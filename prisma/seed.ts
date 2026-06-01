@@ -12,12 +12,15 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
 
 const hm = (h: number, m: number) => h * 60 + m;
 
+// Per-leg reference prices (CAD cents). NOTE: the authoritative, customer-facing
+// pricing lives in src/lib/fares.ts — that catalog is what the checkout API charges.
+// These leg values are kept roughly in sync for the schedule/admin views only.
 const PRICES = {
-  SUNRISE_BANFF_MORAINE: 6499,        // $64.99 CAD per seat
-  DAYTIME_SAMSON_LL: 6499,            // $64.99
-  DAYTIME_LL_MORAINE: 6499,           // $64.99
-  DAYTIME_MORAINE_SAMSON: 6499,       // $64.99
-  EVENING_LL_BANFF: 6499,             // $64.99
+  SUNRISE_BANFF_MORAINE: 9998,        // $99.98 — Sunrise Banff → Moraine
+  DAYTIME_SAMSON_LL: 6599,            // $65.99 — Banff → Lake Louise daytime
+  DAYTIME_LL_MORAINE: 8999,           // $89.99 — Lake Louise ⇄ Moraine connector
+  DAYTIME_MORAINE_SAMSON: 6599,       // $65.99 — return leg
+  EVENING_LL_BANFF: 6599,             // $65.99 — Evening Return (assumed, see fares.ts)
 };
 
 async function main() {

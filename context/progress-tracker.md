@@ -45,6 +45,19 @@ Update this file after every meaningful implementation change.
 
 ## Session Notes
 
+- **2026-06-01 — Theme shift: green-dominant → cream-dominant (Refactoring UI 60/30/10).**
+  - `globals.css`: retuned the `mist` ramp from cool-grey to a warm cream/charcoal neutral (token name kept so existing utilities resolve); added `mist-950`; bound shadcn `:root` tokens + `--bg`/`--text` to the cream/evergreen/sunrise ramps; warmed two-layer shadows; cards lift off the cream page via a near-white warm surface.
+  - Palette roles: cream neutrals = dominant 60% (backgrounds/text), `evergreen` green = 10% accent (titles, primary buttons, active states), `sunrise` gold kept as secondary accent (CTAs, premium Sunrise Express run).
+  - Converted all major surfaces off the dark-green slabs to cream across Hero (cream scrim over the video — opaque left for dark text + green title, fading right to reveal the mountains), HeroBookingForm (white card to pop on the cream hero), Navbar (dark `main_logo` throughout since the bar now sits on cream), Footer, Schedule, RouteMap, ShuttleTracker, ServiceCards, SocialProof, Faq, BookingModal, my-trips, privacy-policy.
+  - Map route-line/marker paint colors and the dark photo-overlay text in ServiceCards intentionally left unchanged.
+  - Known pre-existing (out of scope): `src/app/my-trips/page.tsx` `BookingRow` vs Prisma `Booking` type mismatch.
+- **2026-06-01 — Route-specific pricing restructure (client June pricing sheet).**
+  - Root cause of "price looks the same regardless of where you go": every surface hardcoded a flat $64.99 keyed only by 3 route IDs — no origin→destination fare concept.
+  - New single source of truth: `src/lib/fares.ts` — 6 fare products across 3 tiers, with `quote()` (fare + per-passenger toll, then 5% GST on the combined subtotal). `FareId` flows through the store (`BookingRouteId` is now an alias), the checkout API (server-authoritative `getFare`/`quote`), BookingModal (grouped selector + live toll/GST breakdown), HeroBookingForm, ServiceCards, ScheduleInteractive, ScheduleDashboard, Faq, and the seed.
+  - Prices: Sunrise Banff→Moraine $99.98, Sunrise Banff→LL $79.99, Banff→LL $65.99, Banff→LL+Moraine $89.99 (+$5 Moraine toll/guest), Lake Louise⇄Moraine $89.99 (round trip). Decisions confirmed with client: daytime now originates in Banff, toll is per-passenger, GST applies to fare+toll.
+  - ASSUMPTION (flagged in code): Evening Return (LL→Banff) kept at $65.99 mirroring Banff→LL — not on the sheet; confirm before launch.
+  - NOTE: ScheduleInteractive still shows the operational Samson-Mall circuit timetable (unchanged times); only pricing/products were restructured. Booking `subtotalCents` folds the toll in (no separate DB toll column).
+  - Verified: `tsc --noEmit` clean for all touched files (pre-existing my-trips `BookingRow` error unchanged).
 - Context files are complete and locked in. 
 - Ready to begin spec-driven development. 
 - Ensure the first prompt instructs the AI to read the context files and `Unit 01` spec before executing any terminal commands or generating code.

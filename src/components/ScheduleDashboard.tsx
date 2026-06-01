@@ -24,41 +24,39 @@ export default function ScheduleDashboard() {
           <h3 id="pricing-heading" className="font-display text-lg font-bold text-mist-900 dark:text-white">
             Pricing &amp; bundles
           </h3>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-400 dark:text-mist-500">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500 dark:text-mist-500">
             All prices CAD · 5% GST extra
           </span>
         </div>
 
         <ul className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
           <PriceCard
-            eyebrow="Single leg"
-            title="Single trip"
-            priceCents={6499}
-            description="One point-to-point seat on any Sunrise Express, Daytime Circuit, or Evening Return leg."
-            note="Best for short transfers"
-          />
-          <PriceCard
-            eyebrow="Best value"
-            title="Both lakes bundle"
-            priceCents={8499}
-            wasCents={12998}
-            description="Combine any two Daytime Circuit legs to visit Lake Louise and Moraine in a single day."
-            note="Save $44.99 vs two single trips"
-            accent
+            eyebrow="Daytime · from Banff"
+            title="Banff → Lake Louise"
+            priceCents={6599}
+            description="One-way daytime seat from Banff to Lake Louise. Add Moraine Lake for $89.99."
+            note="Banff → Both Lakes $89.99 + $5 toll"
           />
           <PriceCard
             eyebrow="Most popular"
-            title="Round-trip circuit"
-            priceCents={8499}
-            wasCents={19497}
-            description="All three Daytime Circuit legs — see both lakes and return to your starting stop."
-            note="Save $109.98 vs three single trips"
+            title="Lake Louise ⇄ Moraine"
+            priceCents={8999}
+            description="Direct shuttle between Lake Louise and Moraine Lake — one ticket covers both directions."
+            note="Round trip — there and back"
+            accent
+          />
+          <PriceCard
+            eyebrow="Premium · Sunrise"
+            title="Sunrise Express"
+            priceCents={7999}
+            description="Premium 4:30 AM departure from Banff. Banff → Lake Louise $79.99, Banff → Moraine Lake $99.98."
+            note="Beat the crowds at first light"
             primary
           />
         </ul>
 
         <p className="mt-4 text-xs text-mist-500 dark:text-mist-400">
-          Bundle discounts apply automatically at checkout when you add qualifying Daytime Circuit legs.
+          All fares are per seat in CAD. A $5 Moraine Lake toll (per guest) and 5% GST apply where noted; GST is calculated on the fare plus toll at checkout.
         </p>
       </section>
 
@@ -70,7 +68,7 @@ export default function ScheduleDashboard() {
           <h3 className="font-display text-lg font-bold text-mist-900 dark:text-white">
             Important travel notes
           </h3>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-400 dark:text-mist-500">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500 dark:text-mist-500">
             Before you board
           </span>
         </div>
