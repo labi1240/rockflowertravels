@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'node:crypto';
 import { releaseExpiredHolds } from '@/lib/inventory';
 
 export const runtime = 'nodejs';
+
+/** Constant-time string compare that doesn't leak length via early return. */
+function safeEqual(a: string, b: string): boolean {
+  const ba = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ba.length !== bb.length) {
+    // Compare against self to keep timing uniform, then fail.
+    timingSafeEqual(ba, ba);
+    return false;
+  }
+  return timingSafeEqual(ba, bb);
+}
 
 /**
  * Releases seats from expired PENDING_PAYMENT holds across all departures.
@@ -15,8 +28,8 @@ export const runtime = 'nodejs';
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (secret) {
-    const auth = req.headers.get('authorization');
-    if (auth !== `Bearer ${secret}`) {
+    const auth = req.headers.get('authorization') ?? '';
+    if (!safeEqual(auth, `Bearer ${secret}`)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }

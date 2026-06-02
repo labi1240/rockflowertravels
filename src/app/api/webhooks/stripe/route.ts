@@ -82,15 +82,20 @@ export async function POST(req: NextRequest) {
               where: { id: payment.bookingId },
               select: { seats: true, routeSlug: true, routeKind: true, serviceDate: true, departureTime: true },
             });
-            if (b?.serviceDate && b.departureTime) {
+            const routeSlug = b?.routeSlug ?? b?.routeKind ?? null;
+            if (b?.serviceDate && b.departureTime && routeSlug) {
               await releaseDepartureSeats(
                 tx,
                 {
-                  routeSlug: b.routeSlug ?? b.routeKind ?? '',
+                  routeSlug,
                   serviceDateISO: b.serviceDate.toISOString().slice(0, 10),
                   departureTime: b.departureTime,
                 },
                 b.seats,
+              );
+            } else if (b) {
+              console.warn(
+                `[stripe-webhook] booking ${payment.bookingId} refunded without a resolvable route/departure — seats not released.`,
               );
             }
           }

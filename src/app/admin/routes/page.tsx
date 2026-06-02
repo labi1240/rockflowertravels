@@ -39,15 +39,15 @@ export default async function AdminRoutesPage() {
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-mist-200 bg-white shadow-[var(--shadow-card)]">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-mist-200 bg-white shadow-[var(--shadow-card)]">
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-mist-200 text-left text-xs font-semibold uppercase tracking-wider text-mist-500">
               <th className="px-4 py-3">Route</th>
               <th className="px-4 py-3">Tier</th>
               <th className="px-4 py-3 text-right">Schedules</th>
               <th className="px-4 py-3 text-right">Fares</th>
-              <th className="px-4 py-3">Origin</th>
+              <th className="px-4 py-3">Source</th>
             </tr>
           </thead>
           <tbody>

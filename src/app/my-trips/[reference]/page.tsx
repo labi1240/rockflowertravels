@@ -6,8 +6,15 @@ import BookingModal from '@/components/BookingModal';
 import { prisma } from '@/lib/prisma';
 import { syncCurrentUser } from '@/lib/user-sync';
 import { RouteKind, BookingStatus } from '@/generated/prisma/enums';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+
+// Per-booking confirmation page — private, never indexed.
+export const metadata: Metadata = {
+  title: 'Trip details',
+  robots: { index: false, follow: false },
+};
 
 const ROUTE_DISPLAY: Record<RouteKind, { name: string; tagline: string }> = {
   SUNRISE_EXPRESS: { name: 'Sunrise Express',  tagline: 'Premium 4:30 AM Banff → Moraine Lake' },
@@ -104,10 +111,10 @@ export default async function BookingDetailPage({ params }: PageProps) {
       <Navbar />
 
       <main className="main-content min-h-screen bg-mist-50">
-        <section className="mx-auto max-w-3xl px-6 pt-32 pb-24">
+        <section className="mx-auto max-w-3xl px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-24">
           <Link
             href="/my-trips"
-            className="mb-8 inline-flex items-center gap-2 text-sm text-mist-500 transition-colors hover:text-mist-900"
+            className="mb-6 inline-flex items-center gap-2 text-sm text-mist-500 transition-colors hover:text-mist-900 sm:mb-8"
           >
             ← Back to my trips
           </Link>
@@ -121,7 +128,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
               </span>
               <span className="font-mono text-xs text-mist-500">{booking.reference}</span>
             </div>
-            <h1 className="font-display text-3xl font-bold text-evergreen-800 sm:text-4xl">
+            <h1 className="font-display text-2xl font-bold text-evergreen-800 sm:text-3xl lg:text-4xl">
               {routeTitle}
             </h1>
             {route && <p className="mt-1 text-mist-700">{route.tagline}</p>}
@@ -204,10 +211,10 @@ function Row({
   subtle?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+    <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <dt className="text-sm text-mist-500">{label}</dt>
       <dd
-        className={`text-right ${mono ? 'tabular-nums' : ''} ${
+        className={`min-w-0 sm:text-right ${mono ? 'tabular-nums' : ''} ${
           emphasize ? 'font-display text-lg font-bold text-mist-900' : subtle ? 'text-xs text-mist-500 font-mono break-all' : 'text-mist-900'
         }`}
       >

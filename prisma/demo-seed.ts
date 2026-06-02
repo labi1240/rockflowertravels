@@ -93,6 +93,7 @@ async function seedDemo() {
     update: {},
   });
   const banff = await prisma.stop.findUnique({ where: { code: "BANFF" }, select: { id: true } });
+  if (!banff) throw new Error('Missing BANFF stop: run the main seed (bun prisma/seed.ts) before the demo seed.');
   const route = await prisma.route.create({
     data: {
       slug: DEMO_ROUTE_SLUG,
@@ -111,7 +112,7 @@ async function seedDemo() {
       templateId: template.id,
       sequence: 1,
       fromStopId: canmore.id,
-      toStopId: banff!.id,
+      toStopId: banff.id,
       departMin: 8 * 60,
       arriveMin: 8 * 60 + 50,
       bookable: true,

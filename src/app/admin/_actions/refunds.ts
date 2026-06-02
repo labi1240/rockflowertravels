@@ -29,6 +29,7 @@ export async function refundBooking(input: {
     where: { id: bookingId },
     select: {
       status: true,
+      reference: true,
       payment: { select: { status: true, stripePaymentIntentId: true } },
     },
   });
@@ -45,10 +46,12 @@ export async function refundBooking(input: {
     return { ok: false, error: 'Booking has no Stripe payment intent.' };
   }
 
+  // Deterministic idempotency key so a retried action can't issue a second refund.
+  const idempotencyKey = `refund_${paymentIntentId}`;
   try {
-    await stripe.refunds.create({ payment_intent: paymentIntentId });
+    await stripe.refunds.create({ payment_intent: paymentIntentId }, { idempotencyKey });
   } catch (err) {
-    console.error('[refundBooking] stripe refund failed', err);
+    console.error(`[refundBooking] stripe refund failed (idempotencyKey=${idempotencyKey})`, err);
     return { ok: false, error: 'Stripe refund failed. Check the dashboard and try again.' };
   }
 
@@ -63,7 +66,7 @@ export async function refundBooking(input: {
   });
 
   revalidatePath('/admin/bookings');
-  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath(`/admin/bookings/${booking.reference}`); // detail route is /admin/bookings/[reference]
   revalidatePath('/admin');
 
   return { ok: true };

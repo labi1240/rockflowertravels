@@ -32,19 +32,23 @@ export async function setDepartureCapacity(input: {
   const serviceDate = new Date(`${input.serviceDate}T00:00:00Z`);
   const key = { routeSlug_serviceDate_departureTime: { routeSlug, serviceDate, departureTime } };
 
-  const existing = await prisma.departureInventory.findUnique({
-    where: key,
-    select: { seatsBooked: true },
+  // Provision the row if it doesn't exist yet (no-op when it already does).
+  await prisma.departureInventory.createMany({
+    data: [{ routeSlug, serviceDate, departureTime, seatsTotal, seatsBooked: 0 }],
+    skipDuplicates: true,
   });
-  if (existing && seatsTotal < existing.seatsBooked) {
-    return { ok: false, error: `${existing.seatsBooked} seats already booked — capacity can't be lower.` };
-  }
 
-  await prisma.departureInventory.upsert({
-    where: key,
-    create: { routeSlug, serviceDate, departureTime, seatsTotal, seatsBooked: 0 },
-    update: { seatsTotal },
+  // Atomic guard: only apply the new capacity while it still covers already-booked seats.
+  // A single conditional UPDATE avoids the read-then-write TOCTOU race with concurrent
+  // bookings that could otherwise increment seatsBooked above the new seatsTotal.
+  const updated = await prisma.departureInventory.updateMany({
+    where: { routeSlug, serviceDate, departureTime, seatsBooked: { lte: seatsTotal } },
+    data: { seatsTotal },
   });
+  if (updated.count === 0) {
+    const current = await prisma.departureInventory.findUnique({ where: key, select: { seatsBooked: true } });
+    return { ok: false, error: `${current?.seatsBooked ?? 0} seats already booked — capacity can't be lower.` };
+  }
 
   revalidatePath('/admin/capacity');
   revalidatePath('/admin');

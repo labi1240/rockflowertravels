@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Outfit, Plus_Jakarta_Sans, Geist } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { FaresProvider } from "@/components/FaresProvider";
 import { getActiveFares } from "@/lib/fares-db";
 import type { FareDTO } from "@/lib/fares";
+import { SITE, organizationSchema, websiteSchema } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -24,20 +26,64 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "RockFlower Travels | Banff, Lake Louise & Moraine Lake Shuttle Service",
-  description: "Book premium daily shuttle services between Banff, Lake Louise Village (Samson Mall), Lake Louise Lakeshore, and Moraine Lake. View Sunrise Express and Daytime Circuit schedules.",
-  metadataBase: new URL("https://rockflowertravels.ca"),
+  metadataBase: new URL(SITE.url),
+  title: {
+    default: `${SITE.name} | Banff, Lake Louise & Moraine Lake Shuttle Service`,
+    template: `%s | ${SITE.name}`,
+  },
+  description: SITE.description,
+  applicationName: SITE.name,
+  keywords: [...SITE.keywords],
+  authors: [{ name: SITE.legalName, url: SITE.url }],
+  creator: SITE.legalName,
+  publisher: SITE.legalName,
+  category: "travel",
   alternates: {
     canonical: "/",
   },
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  icons: {
+    icon: "/main_logo.png",
+    shortcut: "/main_logo.png",
+    apple: "/main_logo.png",
+  },
   openGraph: {
-    title: "RockFlower Travels | Banff & Lake Louise Shuttles",
-    description: "Premium daily shuttle schedule connecting Banff, Moraine Lake, and Lake Louise. Travel in comfort.",
-    url: "https://rockflowertravels.ca",
-    siteName: "RockFlower Travels",
-    locale: "en_US",
+    title: `${SITE.name} | Banff & Lake Louise Shuttles`,
+    description: SITE.shortDescription,
+    url: SITE.url,
+    siteName: SITE.name,
+    locale: SITE.locale,
     type: "website",
-  }
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE.name} | Banff & Lake Louise Shuttles`,
+    description: SITE.shortDescription,
+    creator: SITE.twitter,
+    site: SITE.twitter,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1f3d2b",
+  width: "device-width",
+  initialScale: 1,
+  colorScheme: "light",
 };
 
 export default async function RootLayout({
@@ -60,6 +106,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className={cn(outfit.variable, plusJakarta.variable, "font-sans", geist.variable)}>
       <body>
+        <JsonLd schema={[organizationSchema, websiteSchema]} />
         <ClerkProvider>
           <FaresProvider fares={fares} nowMs={nowMs}>
             {children}

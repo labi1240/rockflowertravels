@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { edmontonTodayUTC, edmontonTodayISO, EDMONTON_TZ } from '@/lib/edmonton';
+import { edmontonTodayUTC, edmontonTodayISO } from '@/lib/edmonton';
 
 export const dynamic = 'force-dynamic';
 
+// `today` is a UTC-midnight Date standing for the Edmonton calendar day, so format it in
+// UTC — formatting in EDMONTON_TZ would render UTC-midnight as the *previous* day.
 const TODAY_LABEL = new Intl.DateTimeFormat('en-CA', {
-  timeZone: EDMONTON_TZ,
+  timeZone: 'UTC',
   weekday: 'long',
   month: 'long',
   day: 'numeric',
@@ -99,7 +101,7 @@ export default async function OperationsCenterPage() {
         </div>
         {runs.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-mist-200 bg-mist-100 p-6 text-sm text-mist-500">
-            No departures with bookings yet today.
+            No departures scheduled today.
           </p>
         ) : (
           <ul className="space-y-3">

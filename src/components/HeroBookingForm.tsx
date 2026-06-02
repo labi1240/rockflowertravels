@@ -7,14 +7,19 @@ import { useFares } from '@/components/FaresProvider';
 
 export default function HeroBookingForm() {
   const openBooking = useBookingModal((s) => s.open);
-  const { byTier, nowMs } = useFares();
-  const [selectedRoute, setSelectedRoute] = useState<BookingRouteId>('banff-ll-moraine');
+  const { byTier, getFare, nowMs } = useFares();
+  // Derive the initial selection from the live catalog so we never preselect a fare id
+  // that's been deactivated/removed. Falls back to the first fare in tier order.
+  const firstFareId = TIERS.map((t) => byTier[t.key]?.[0]?.id).find(Boolean) ?? '';
+  const [selectedRoute, setSelectedRoute] = useState<BookingRouteId>(firstFareId);
   const [date, setDate] = useState('2026-05-21');
   const [passengers, setPassengers] = useState(1);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    openBooking(selectedRoute, { date, passengers });
+    // Guard against a stale selection (e.g. the fare was deactivated since mount).
+    const route = getFare(selectedRoute) ? selectedRoute : firstFareId;
+    openBooking(route, { date, passengers });
   };
 
   return (
@@ -22,7 +27,7 @@ export default function HeroBookingForm() {
       onSubmit={handleSubmit}
       className="relative overflow-hidden rounded-3xl bg-white backdrop-blur-xl ring-1 ring-mist-900/10 shadow-[var(--shadow-elevated)]"
     >
-      <div className="p-8 sm:p-10">
+      <div className="p-6 sm:p-8 lg:p-10">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-evergreen-600">
           Book your shuttle
         </p>

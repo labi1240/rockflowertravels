@@ -120,14 +120,36 @@ export default function Faq() {
           </FaqItem>
         </FaqGroup>
 
-        {/* Policies — placeholders */}
+        {/* Policies */}
         <FaqGroup label="Policies" count={6} icon={<ShieldIcon />}>
-          <FaqItem question="What is your cancellation and refund policy?" todo />
-          <FaqItem question="Can I reschedule my booking to another day?" todo />
-          <FaqItem question="What happens if I miss my shuttle?" todo />
-          <FaqItem question="Can I bring my pet on the shuttle?" todo />
-          <FaqItem question="Are your buses wheelchair accessible? Do you have child seats?" todo />
-          <FaqItem question="What luggage and equipment can I bring on board?" todo />
+          <FaqItem question="What is your cancellation and refund policy?">
+            Tickets are fully refundable up to 24 hours before your scheduled departure time.
+            Cancellations made within 24 hours of departure are non-refundable.
+          </FaqItem>
+          <FaqItem question="Can I reschedule my booking to another day?">
+            Yes, you can reschedule your booking up to 24 hours before departure, subject to seat
+            availability. Please contact our support team to request a change.
+          </FaqItem>
+          <FaqItem question="What happens if I miss my shuttle?">
+            Shuttles depart strictly on time. If you miss your scheduled departure, your ticket is
+            void. We will try our best to accommodate you on a later shuttle if space permits, but
+            we cannot guarantee availability.
+          </FaqItem>
+          <FaqItem question="Can I bring my pet on the shuttle?">
+            Only certified service animals are permitted on board. For the comfort and safety of all
+            passengers, we cannot accommodate pets or emotional support animals.
+          </FaqItem>
+          <FaqItem question="Are your buses wheelchair accessible? Do you have child seats?">
+            Our standard shuttles are not wheelchair accessible, and we do not provide child car
+            seats. If you require an accessible vehicle, please contact us at least 48 hours in
+            advance so we can make appropriate arrangements. Parents must bring their own car seats
+            if required.
+          </FaqItem>
+          <FaqItem question="What luggage and equipment can I bring on board?">
+            Each passenger is allowed one small personal item, such as a daypack. We cannot
+            accommodate large luggage, strollers, or bulky sports equipment (like rigid kayaks or
+            hard-sided coolers). Collapsible items like trekking poles are permitted.
+          </FaqItem>
         </FaqGroup>
       </div>
     </section>

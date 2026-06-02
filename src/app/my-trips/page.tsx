@@ -6,8 +6,15 @@ import BookingModal from '@/components/BookingModal';
 import { prisma } from '@/lib/prisma';
 import { syncCurrentUser } from '@/lib/user-sync';
 import { RouteKind, BookingStatus } from '@/generated/prisma/enums';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+
+// Private account area — keep out of search indexes.
+export const metadata: Metadata = {
+  title: 'My Trips',
+  robots: { index: false, follow: false },
+};
 
 const ROUTE_DISPLAY: Record<RouteKind, { name: string; tone: string }> = {
   SUNRISE_EXPRESS: { name: 'Sunrise Express', tone: 'bg-sunrise-100 text-sunrise-700 ring-sunrise-500/30' },
@@ -86,12 +93,12 @@ export default async function MyTripsPage() {
       <Navbar />
 
       <main className="main-content min-h-screen bg-mist-50">
-        <section className="mx-auto max-w-5xl px-6 pt-32 pb-24">
-          <header className="mb-10">
+        <section className="mx-auto max-w-5xl px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-24">
+          <header className="mb-8 sm:mb-10">
             <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-sunrise-500/40 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-sunrise-700">
               <span className="size-1.5 rounded-full bg-sunrise-500" /> My trips
             </p>
-            <h1 className="font-display text-4xl font-bold text-evergreen-800 sm:text-5xl">
+            <h1 className="font-display text-3xl font-bold text-evergreen-800 sm:text-4xl lg:text-5xl">
               Welcome back{user.firstName ? `, ${user.firstName}` : ''}
             </h1>
             <p className="mt-3 text-mist-700">
@@ -213,7 +220,7 @@ function BookingList({
 
 function EmptyState() {
   return (
-    <div className="rounded-3xl border border-mist-200 bg-white p-12 text-center shadow-[var(--shadow-card)]">
+    <div className="rounded-3xl border border-mist-200 bg-white p-6 text-center shadow-[var(--shadow-card)] sm:p-12">
       <p className="font-display text-2xl font-semibold text-mist-900">
         No bookings yet
       </p>

@@ -274,6 +274,7 @@ model Fare {
   updatedAt      DateTime  @updatedAt
 
   @@index([tier, sortOrder])
+  @@index([routeSlug]) // checkout/admin lookups filter fares by the route they sell
 }
 
 // ─── Per-departure seat inventory (Phase 4) ────────────────────────────────────

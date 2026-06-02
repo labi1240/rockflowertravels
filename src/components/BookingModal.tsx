@@ -4,18 +4,25 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import type { StripeElementsOptions } from '@stripe/stripe-js';
 import { motion, AnimatePresence } from 'motion/react';
+import { QRCodeSVG } from 'qrcode.react';
+import { toPng } from 'html-to-image';
 import { getStripe } from '@/lib/stripe-client';
+import { absoluteUrl } from '@/lib/seo';
 import { useBookingModal } from '@/store/booking-modal';
 import {
   TIERS,
   formatCents,
-  isFareId,
   isSaleActive,
   effectiveUnitPrice,
   quote,
   type FareId,
 } from '@/lib/fares';
 import { useFares } from '@/components/FaresProvider';
+
+// Apple Wallet "Add to Wallet" button is gated off until pass signing is wired
+// up (see src/app/api/wallet/apple/[reference]/route.ts). Flip
+// NEXT_PUBLIC_WALLET_ENABLED=true once the Pass Type ID cert + key are in place.
+const WALLET_ENABLED = process.env.NEXT_PUBLIC_WALLET_ENABLED === 'true';
 
 const DAYTIME_TIMES: { value: string; label: string }[] = [
   { value: '7:00 AM',  label: '7:00 AM — Circuit 1' },
@@ -62,16 +69,28 @@ export default function BookingModal() {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!isOpen) return;
-    const target = isFareId(initialRoute) && getFare(initialRoute) ? initialRoute : null;
-    if (target) {
-      setRoute(target);
-      setTime(getFare(target)!.defaultTime);
+    // getFare proves the id exists in the live catalog (admin-authored ids are plain
+    // strings, so a separate isFareId check would add nothing).
+    const initialFare = getFare(initialRoute);
+    if (initialFare) {
+      setRoute(initialRoute);
+      setTime(initialFare.defaultTime);
     }
     if (initialDate) setDate(initialDate);
     if (typeof initialPassengers === 'number' && initialPassengers >= 1 && initialPassengers <= 8) {
       setPassengers(initialPassengers);
     }
   }, [initialRoute, initialDate, initialPassengers, isOpen, getFare]);
+  // Keep the route *state* in sync with the displayed fallback fare: if the selected id
+  // no longer resolves (e.g. it was deactivated), adopt fares[0] so checkout submits the
+  // same fare the rider sees rather than a stale id.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (isOpen && !getFare(route) && fares[0] && route !== fares[0].id) {
+      setRoute(fares[0].id);
+      setTime(fares[0].defaultTime);
+    }
+  }, [isOpen, route, fares, getFare]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // Resolve the selected fare from the DB-backed catalog, falling back to the first fare
@@ -156,7 +175,7 @@ export default function BookingModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative my-8 flex h-[85vh] max-h-[760px] min-h-[560px] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-elevated)] ring-1 ring-mist-200"
+            className="relative my-4 flex h-[90vh] min-h-[480px] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-elevated)] ring-1 ring-mist-200 sm:my-8 sm:h-[85vh] sm:max-h-[760px] sm:min-h-[560px]"
           >
         <button
           aria-label="Close"
@@ -174,7 +193,7 @@ export default function BookingModal() {
             <div className="bg-white">
               <StepIndicator step={step as 1 | 2 | 3} />
 
-              <div className="p-6 sm:p-9">
+              <div className="p-4 sm:p-6 lg:p-9">
                 {step === 1 && (
                   <form onSubmit={handleStep1Submit} className="space-y-6">
                     <header>
@@ -355,7 +374,7 @@ export default function BookingModal() {
             />
           </div>
         ) : (
-          <div className="min-h-full animate-fade-in p-6 sm:p-10">
+          <div className="min-h-full animate-fade-in p-4 sm:p-6 lg:p-10">
             <header className="flex flex-col items-center gap-3 text-center">
               <span
                 className="relative grid size-14 place-items-center rounded-full bg-evergreen-700 text-white shadow-[0_0_0_8px_hsl(168_55%_16%/0.08)]"
@@ -374,7 +393,7 @@ export default function BookingModal() {
             </header>
 
             <div className="mx-auto mt-7 max-w-md">
-              <BoardingPass
+              <ConfirmedTicket
                 name={name}
                 routeName={fare?.label ?? '—'}
                 date={date}
@@ -568,6 +587,262 @@ function Select({ id, value, onChange, children }: { id: string; value: string; 
   );
 }
 
+type TicketProps = {
+  name: string;
+  routeName: string;
+  date: string;
+  time: string;
+  passengers: number;
+  ticketRef: string;
+  total: number;
+};
+
+// Boarding pass + the "save / share" toolbar. Owns the capture ref so the PNG
+// and print views snapshot exactly what's on screen (QR included).
+function ConfirmedTicket(props: TicketProps) {
+  const passRef = useRef<HTMLDivElement>(null);
+  return (
+    <>
+      <div ref={passRef}>
+        <BoardingPass {...props} />
+      </div>
+      <TicketActions passRef={passRef} {...props} />
+    </>
+  );
+}
+
+function TicketActions({
+  passRef, routeName, date, time, passengers, ticketRef,
+}: TicketProps & { passRef: React.RefObject<HTMLDivElement | null> }) {
+  const [busy, setBusy] = useState<null | 'png' | 'pdf'>(null);
+  const [copied, setCopied] = useState(false);
+
+  const ticketUrl = absoluteUrl(`/my-trips/${encodeURIComponent(ticketRef)}`);
+
+  async function capturePng(): Promise<string | null> {
+    if (!passRef.current) return null;
+    return toPng(passRef.current, { pixelRatio: 2, cacheBust: true, backgroundColor: '#ffffff' });
+  }
+
+  async function handleSavePng() {
+    setBusy('png');
+    try {
+      const dataUrl = await capturePng();
+      if (dataUrl) {
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `rockflower-${ticketRef}.png`;
+        a.click();
+      }
+    } catch (err) {
+      console.error('[ticket] PNG export failed', err);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handlePrint() {
+    setBusy('pdf');
+    // Open the window synchronously (still inside the click gesture) so popup
+    // blockers don't kill it during the async capture below.
+    const win = window.open('', '_blank');
+    try {
+      const dataUrl = await capturePng();
+      if (win && dataUrl) {
+        win.document.write(
+          `<!doctype html><html><head><title>RockFlower ticket ${ticketRef}</title>` +
+            `<meta name="viewport" content="width=device-width, initial-scale=1">` +
+            `<style>@page{margin:14mm}html,body{margin:0}body{display:flex;justify-content:center;padding:16px;background:#fff}img{width:340px;max-width:100%;height:auto}</style>` +
+            `</head><body><img src="${dataUrl}" alt="RockFlower Travels boarding pass ${ticketRef}" onload="window.focus();window.print()"></body></html>`,
+        );
+        win.document.close();
+      } else if (win) {
+        win.close();
+      }
+    } catch (err) {
+      console.error('[ticket] print failed', err);
+      win?.close();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function handleCalendar() {
+    const ics = buildTripIcs({ ticketRef, routeName, date, time, passengers, url: ticketUrl });
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = `rockflower-${ticketRef}.ics`;
+    a.click();
+    URL.revokeObjectURL(href);
+  }
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(ticketUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('[ticket] copy link failed', err);
+    }
+  }
+
+  return (
+    <div className="mt-4 grid grid-cols-2 gap-2.5">
+      <ActionButton onClick={handleCalendar} icon={<CalendarIcon />}>
+        Add to calendar
+      </ActionButton>
+      <ActionButton onClick={handlePrint} busy={busy === 'pdf'} icon={<PrinterIcon />}>
+        {busy === 'pdf' ? 'Preparing…' : 'Save as PDF'}
+      </ActionButton>
+      <ActionButton onClick={handleSavePng} busy={busy === 'png'} icon={<ImageIcon />}>
+        {busy === 'png' ? 'Saving…' : 'Save image'}
+      </ActionButton>
+      <ActionButton onClick={handleCopy} icon={<LinkIcon />}>
+        {copied ? 'Link copied!' : 'Copy link'}
+      </ActionButton>
+    </div>
+  );
+}
+
+function ActionButton({
+  onClick, children, icon, busy = false,
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+  icon: React.ReactNode;
+  busy?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      className="inline-flex items-center justify-center gap-2 rounded-xl border border-mist-200 bg-white px-3 py-2.5 text-xs font-semibold text-mist-700 transition-colors hover:border-evergreen-800/40 hover:text-evergreen-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-evergreen-700 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <span aria-hidden className="text-mist-400">{icon}</span>
+      {children}
+    </button>
+  );
+}
+
+// Builds an RFC 5545 calendar event for the departure, pinned to
+// America/Edmonton (Mountain) via an embedded VTIMEZONE so the time stays
+// correct regardless of the traveller's device timezone.
+function buildTripIcs({
+  ticketRef, routeName, date, time, passengers, url,
+}: {
+  ticketRef: string;
+  routeName: string;
+  date: string;
+  time: string;
+  passengers: number;
+  url: string;
+}): string {
+  const day = date.replace(/-/g, ''); // 2026-05-21 -> 20260521
+  const start = `${day}T${time24(time)}`; // -> 20260521T070000
+  const origin = routeName.split(/→|->/)[0]?.trim() || 'RockFlower Travels';
+  const esc = (s: string) =>
+    s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//RockFlower Travels//Booking//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VTIMEZONE',
+    'TZID:America/Edmonton',
+    'BEGIN:DAYLIGHT',
+    'TZOFFSETFROM:-0700',
+    'TZOFFSETTO:-0600',
+    'TZNAME:MDT',
+    'DTSTART:19700308T020000',
+    'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU',
+    'END:DAYLIGHT',
+    'BEGIN:STANDARD',
+    'TZOFFSETFROM:-0600',
+    'TZOFFSETTO:-0700',
+    'TZNAME:MST',
+    'DTSTART:19701101T020000',
+    'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU',
+    'END:STANDARD',
+    'END:VTIMEZONE',
+    'BEGIN:VEVENT',
+    `UID:${ticketRef}@rockflowertravels.ca`,
+    `DTSTAMP:${icsStamp()}`,
+    `DTSTART;TZID=America/Edmonton:${start}`,
+    'DURATION:PT2H',
+    `SUMMARY:${esc(`RockFlower Shuttle — ${routeName}`)}`,
+    `LOCATION:${esc(origin)}`,
+    `DESCRIPTION:${esc(
+      `Booking reference ${ticketRef} · ${passengers} passenger${passengers === 1 ? '' : 's'}.\nArrive 10 minutes early and present your pass.\nView booking: ${url}`,
+    )}`,
+    'BEGIN:VALARM',
+    'TRIGGER:-PT1H',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Your RockFlower shuttle departs in 1 hour',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+}
+
+// "7:00 AM" -> "070000", "4:30 AM" -> "043000", "3:30 PM" -> "153000".
+function time24(t: string): string {
+  const m = t.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (!m) return '090000';
+  let h = parseInt(m[1], 10);
+  const min = m[2];
+  const ap = m[3]?.toUpperCase();
+  if (ap === 'PM' && h !== 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}${min}00`;
+}
+
+// UTC stamp in basic format: YYYYMMDDTHHMMSSZ.
+function icsStamp(): string {
+  return new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+}
+
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+      <rect x="3" y="4.5" width="18" height="16" rx="2" />
+      <path d="M3 9h18M8 2.5v4M16 2.5v4" />
+    </svg>
+  );
+}
+
+function PrinterIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+      <path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2" />
+      <rect x="6" y="14" width="12" height="7" rx="1" />
+    </svg>
+  );
+}
+
+function ImageIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="9" cy="9" r="1.6" />
+      <path d="m21 16-5-5L5 21" />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+      <path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" />
+      <path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" />
+    </svg>
+  );
+}
+
 function BoardingPass({
   name, routeName, date, time, passengers, ticketRef, total,
 }: {
@@ -579,6 +854,9 @@ function BoardingPass({
   ticketRef: string;
   total: number;
 }) {
+  // The QR resolves to the live booking page for this reference — a driver
+  // (or the guest) scans it to verify status, not just to read the number.
+  const ticketUrl = absoluteUrl(`/my-trips/${encodeURIComponent(ticketRef)}`);
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white text-mist-900 shadow-[var(--shadow-elevated)] ring-1 ring-mist-200">
       {/* Header */}
@@ -630,23 +908,31 @@ function BoardingPass({
           </div>
         </div>
 
-        <div className="mt-4 rounded-lg bg-white p-3 ring-1 ring-mist-200">
-          <div className="flex h-9 items-stretch justify-between">
-            {Array.from({ length: 90 }).map((_, i) => (
-              <span
-                key={i}
-                className="bg-mist-900"
-                style={{
-                  width: `${i % 3 === 0 ? 3 : i % 2 === 0 ? 1 : 2}px`,
-                  opacity: i % 7 === 0 ? 0.3 : 1,
-                }}
-              />
-            ))}
-          </div>
-          <p className="mt-2 text-center font-mono text-[10px] font-bold tracking-[0.22em] text-mist-700">
+        {/* Real, scannable QR. Encodes the live booking URL so a driver scan
+            opens the current status for this reference. `level="M"` tolerates
+            ~15% damage (creased printouts / screen glare). */}
+        <div className="mt-4 flex flex-col items-center rounded-lg bg-white p-4 ring-1 ring-mist-200">
+          <QRCodeSVG
+            value={ticketUrl}
+            size={132}
+            level="M"
+            marginSize={0}
+            title={`RockFlower Travels boarding pass ${ticketRef}`}
+          />
+          <p className="mt-3 font-mono text-[10px] font-bold tracking-[0.22em] text-mist-700">
             {ticketRef}
           </p>
+          <p className="mt-1 text-[10px] text-mist-500">Scan to view your live booking</p>
         </div>
+
+        {WALLET_ENABLED && (
+          <a
+            href={absoluteUrl(`/api/wallet/apple/${encodeURIComponent(ticketRef)}`)}
+            className="mt-4 flex w-full items-center justify-center rounded-lg bg-mist-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-black"
+          >
+            Add to Apple Wallet
+          </a>
+        )}
 
         <p className="mt-4 text-xs leading-relaxed text-mist-700">
           Arrive <strong className="text-mist-900">10 minutes</strong> before departure and present this pass to the driver.

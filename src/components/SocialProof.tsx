@@ -68,7 +68,7 @@ export default function SocialProof() {
       </header>
 
       {/* Rating badges + operational stats */}
-      <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-8 grid grid-cols-2 gap-2.5 sm:mt-10 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
         {PLACEHOLDER_BADGES.map((b) => (
           <RatingBadge key={b.source} {...b} />
         ))}

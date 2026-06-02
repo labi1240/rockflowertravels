@@ -107,6 +107,8 @@ export async function createRouteWithSchedule(input: CreateRouteInput): Promise<
     const fid = f.id?.trim().toLowerCase();
     if (!fid || !SLUG_RE.test(fid)) return { ok: false, error: `Fare ${i + 1}: id must be kebab-case.` };
     if (!f.label?.trim() || !f.short?.trim()) return { ok: false, error: `Fare ${i + 1}: label and short label are required.` };
+    if (!f.origin?.trim()) return { ok: false, error: `Fare ${i + 1}: origin is required.` };
+    if (!f.destination?.trim()) return { ok: false, error: `Fare ${i + 1}: destination is required.` };
     if (!f.defaultTime?.trim()) return { ok: false, error: `Fare ${i + 1}: default departure time is required.` };
     if (!Number.isInteger(f.priceCents) || f.priceCents <= 0) return { ok: false, error: `Fare ${i + 1}: price must be positive.` };
     if (!Number.isInteger(f.tollCents) || f.tollCents < 0) return { ok: false, error: `Fare ${i + 1}: toll must be zero or positive.` };
