@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(git commit -q -m 'feat: add user sync, fares lib, my-trips, map UI, and component refinements *)",
-      "Bash(git commit -q -m 'fix: type BookingList prop to narrowed BookingRow to unblock build *)"
+      "Bash(git commit -q -m 'fix: type BookingList prop to narrowed BookingRow to unblock build *)",
+      "Bash(vercel env *)",
+      "Bash(vercel --prod)"
     ]
   }
 }
