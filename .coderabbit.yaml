@@ -3,7 +3,19 @@ language: "en-US"
 
 reviews:
   profile: "assertive"
-  auto_review: true
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+    base_branches:
+      - main
+  # Review only authored source — skip generated Prisma client, build output, lockfiles.
+  path_filters:
+    - "!src/generated/**"
+    - "!.next/**"
+    - "!**/*.lock"
+    - "!bun.lock"
+    - "!bun.lockb"
   path_instructions:
     - path: "prisma/schema.prisma"
       instructions: |
@@ -31,3 +43,11 @@ reviews:
       instructions: |
         - Ensure checkout flow with Stripe API handles the 5% local GST correctly.
         - Keep premium runs (e.g., 4:30 AM Sunrise Express) isolated from standard loops in checkout or scheduling logic.
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - "context/*.md"
