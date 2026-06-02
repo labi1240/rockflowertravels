@@ -72,6 +72,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
       status: true,
       userId: true,
       routeKind: true,
+      routeName: true,
       serviceDate: true,
       departureTime: true,
       guestFirstName: true,
@@ -94,6 +95,8 @@ export default async function BookingDetailPage({ params }: PageProps) {
 
   const statusInfo = STATUS_DISPLAY[booking.status];
   const route = booking.routeKind ? ROUTE_DISPLAY[booking.routeKind] : null;
+  const routeTitle = route?.name ?? booking.routeName ?? 'Shuttle booking';
+  const routeLabel = route?.name ?? booking.routeName ?? '—';
   const fullName = [booking.guestFirstName, booking.guestLastName].filter(Boolean).join(' ');
 
   return (
@@ -119,7 +122,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
               <span className="font-mono text-xs text-mist-500">{booking.reference}</span>
             </div>
             <h1 className="font-display text-3xl font-bold text-evergreen-800 sm:text-4xl">
-              {route?.name ?? 'Shuttle booking'}
+              {routeTitle}
             </h1>
             {route && <p className="mt-1 text-mist-700">{route.tagline}</p>}
             <p className="mt-3 text-sm text-mist-700">{statusInfo.description}</p>
@@ -133,7 +136,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
               <Row label="Departure">
                 {booking.departureTime ?? 'Not set'}
               </Row>
-              <Row label="Route">{route?.name ?? '—'}</Row>
+              <Row label="Route">{routeLabel}</Row>
             </Panel>
 
             <Panel title="Contact">

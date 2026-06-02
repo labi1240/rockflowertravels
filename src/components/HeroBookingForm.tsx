@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import { useBookingModal, type BookingRouteId } from '@/store/booking-modal';
-import { FARES_BY_TIER, TIERS, formatCents } from '@/lib/fares';
+import { TIERS, formatCents, isSaleActive, effectiveUnitPrice } from '@/lib/fares';
+import { useFares } from '@/components/FaresProvider';
 
 export default function HeroBookingForm() {
   const openBooking = useBookingModal((s) => s.open);
+  const { byTier, nowMs } = useFares();
   const [selectedRoute, setSelectedRoute] = useState<BookingRouteId>('banff-ll-moraine');
   const [date, setDate] = useState('2026-05-21');
   const [passengers, setPassengers] = useState(1);
@@ -38,12 +40,17 @@ export default function HeroBookingForm() {
             >
               {TIERS.map((tier) => (
                 <optgroup key={tier.key} label={tier.label}>
-                  {FARES_BY_TIER[tier.key].map((f) => (
-                    <option key={f.id} value={f.id} className="bg-white text-mist-900">
-                      {f.label} — {formatCents(f.priceCents)}
-                      {f.tollCents > 0 ? ` +${formatCents(f.tollCents)} toll` : ''}
-                    </option>
-                  ))}
+                  {byTier[tier.key].map((f) => {
+                    const eff = effectiveUnitPrice(f, nowMs);
+                    const sale = isSaleActive(f, nowMs);
+                    return (
+                      <option key={f.id} value={f.id} className="bg-white text-mist-900">
+                        {f.label} — {formatCents(eff)}
+                        {sale ? ` (was ${formatCents(f.priceCents)})` : ''}
+                        {f.tollCents > 0 ? ` +${formatCents(f.tollCents)} toll` : ''}
+                      </option>
+                    );
+                  })}
                 </optgroup>
               ))}
             </select>
