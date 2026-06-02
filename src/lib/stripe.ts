@@ -8,7 +8,9 @@ function getClient(): Stripe {
   if (!key) {
     throw new Error('STRIPE_SECRET_KEY is not set in environment');
   }
-  client = new Stripe(key, { typescript: true });
+  // Pin the API version so request/response shapes match the installed SDK's types
+  // and don't shift if the account default changes. Bump deliberately on SDK upgrades.
+  client = new Stripe(key, { apiVersion: '2026-04-22.dahlia', typescript: true });
   return client;
 }
 

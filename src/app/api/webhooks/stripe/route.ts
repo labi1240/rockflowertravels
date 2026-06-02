@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
+import { releaseDepartureSeats } from '@/lib/inventory';
 
 export const runtime = 'nodejs';
 
@@ -69,10 +70,31 @@ export async function POST(req: NextRequest) {
         });
         if (!payment) break;
 
-        await prisma.$transaction([
-          prisma.booking.update({ where: { id: payment.bookingId }, data: { status: 'REFUNDED' } }),
-          prisma.payment.update({ where: { bookingId: payment.bookingId }, data: { status: 'REFUNDED' } }),
-        ]);
+        await prisma.$transaction(async (tx) => {
+          // Conditional transition so a redelivered webhook can't release seats twice.
+          const res = await tx.booking.updateMany({
+            where: { id: payment.bookingId, status: { in: ['CONFIRMED', 'PENDING_PAYMENT'] } },
+            data: { status: 'REFUNDED' },
+          });
+          await tx.payment.update({ where: { bookingId: payment.bookingId }, data: { status: 'REFUNDED' } });
+          if (res.count === 1) {
+            const b = await tx.booking.findUnique({
+              where: { id: payment.bookingId },
+              select: { seats: true, routeSlug: true, routeKind: true, serviceDate: true, departureTime: true },
+            });
+            if (b?.serviceDate && b.departureTime) {
+              await releaseDepartureSeats(
+                tx,
+                {
+                  routeSlug: b.routeSlug ?? b.routeKind ?? '',
+                  serviceDateISO: b.serviceDate.toISOString().slice(0, 10),
+                  departureTime: b.departureTime,
+                },
+                b.seats,
+              );
+            }
+          }
+        });
         break;
       }
 

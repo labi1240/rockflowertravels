@@ -32,7 +32,12 @@ model Stop {
 
 model Route {
   id          String             @id @default(cuid())
-  kind        RouteKind          @unique
+  // Legacy inventory-bucket tag for the 3 original routes. Nullable + non-unique now,
+  // because admin-authored routes have no RouteKind enum value (the enum can't grow at
+  // runtime). `slug` is the stable identity going forward.
+  kind        RouteKind?
+  slug        String?            @unique
+  tier        String?                                   // 'sunrise' | 'daytime' | 'evening' | custom
   displayName String
   isPremium   Boolean            @default(false)
   description String?
@@ -161,18 +166,27 @@ model Booking {
   // Trip snapshot — denormalized from checkout input so the dashboard can render
   // route/date/time without joining through BookingLeg → TripLeg → Trip → Template.
   // Frozen at hold time; later schedule changes don't shift what the rider sees.
-  routeKind      RouteKind?
+  routeKind      RouteKind?                           // legacy enum tag; null for admin-authored routes
+  routeName      String?                              // display name snapshot, enum-independent
+  routeSlug      String?                              // Route.slug snapshot
   serviceDate    DateTime?     @db.Date
   departureTime  String?                              // "07:00", "4:30 AM" — exactly as displayed
 
   status         BookingStatus @default(PENDING_PAYMENT)
   holdExpiresAt  DateTime?                            // 15-min seat hold; null once CONFIRMED
+  seats          Int           @default(1)            // passenger count — drives per-departure inventory
 
   // Pricing snapshot in CAD cents, taken at hold time so later price changes don't shift the rider.
   subtotalCents  Int
   gstCents       Int                                  // 5% GST added on top of subtotal
   totalCents     Int
   currency       String        @default("CAD")
+
+  // Refund audit — set when an admin initiates a refund. The REFUNDED status itself
+  // is written by the Stripe `charge.refunded` webhook (single source of truth), not here.
+  refundedAt     DateTime?
+  refundedBy     String?                              // admin email that initiated the refund
+  refundReason   String?
 
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -224,4 +238,59 @@ model Payment {
 
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
+}
+
+// ─── Fare catalog — admin-editable pricing ─────────────────────────────────────
+// DB source of truth for shuttle pricing. Mirrors what used to be the static
+// `FARES` map in src/lib/fares.ts (that module is now types + pure math only).
+// The checkout route reads from here server-authoritatively. `id` is the stable
+// fare slug (matches the historical `FareId` union).
+model Fare {
+  id             String    @id                      // 'banff-ll-moraine', etc.
+  tier           String                             // 'sunrise' | 'daytime' | 'evening'
+  routeKind      String                             // legacy inventory-bucket tag (RouteKind value as string)
+  routeSlug      String?                            // Route.slug this fare sells; admin-authored fares set this
+  label          String
+  short          String
+  origin         String
+  destination    String
+  priceCents     Int                                // base fare per seat, pre-toll, pre-GST
+  tollCents      Int       @default(0)              // Moraine Lake toll per passenger
+  roundTrip      Boolean   @default(false)
+  premium        Boolean   @default(false)
+  defaultTime    String                             // display default departure, e.g. "7:00 AM"
+  note           String?
+
+  active         Boolean   @default(true)           // hide from selectors + reject at checkout when false
+
+  // Temporary sale price (admin-only). When set and `now` ∈ [saleStartsAt, saleEndsAt],
+  // the effective per-seat price is salePriceCents instead of priceCents.
+  salePriceCents Int?
+  saleStartsAt   DateTime?
+  saleEndsAt     DateTime?
+
+  sortOrder      Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([tier, sortOrder])
+}
+
+// ─── Per-departure seat inventory (Phase 4) ────────────────────────────────────
+// Seat pool for one physical departure, keyed exactly by what a Booking records:
+// route + service date + displayed departure time. `seatsBooked` includes pending
+// holds; expired holds and refunds release seats back. Rows are auto-provisioned at
+// DEFAULT capacity on first reservation; admins can adjust seatsTotal.
+model DepartureInventory {
+  id            String   @id @default(cuid())
+  routeSlug     String
+  serviceDate   DateTime @db.Date
+  departureTime String                                // "7:00 AM" — matches Booking.departureTime
+  seatsTotal    Int      @default(25)
+  seatsBooked   Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([routeSlug, serviceDate, departureTime])
+  @@index([serviceDate])
 }

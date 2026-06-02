@@ -13,57 +13,70 @@ import Image from 'next/image';
 import { motion } from 'motion/react';
 import { ShieldCheck, RotateCcw } from 'lucide-react';
 import type { BookingRouteId } from '@/store/booking-modal';
-import { TIER_DEFAULT_FARE, TIER_FROM_CENTS } from '@/lib/fares';
+import type { FareTier } from '@/lib/fares';
+import { useFares } from '@/components/FaresProvider';
 import ServiceBookButton from '@/components/ServiceBookButton';
 
-type Service = {
-  id: BookingRouteId;
+// Static marketing copy per tier. The fare `id` and "from" price come from the
+// DB-backed catalog at render time (see useFares below). The dollar amounts in
+// `highlights` are editorial prose — kept static; live prices flow via priceFromCents.
+type ServiceMeta = {
+  tier: FareTier;
   name: string;
   eyebrow: string;
   window: string;
   description: string;
-  priceFromCents: number;
   image: string;
   highlights: string[];
 };
 
-const SERVICES: Service[] = [
+type Service = ServiceMeta & {
+  id: BookingRouteId;
+  priceFromCents: number;
+};
+
+const SERVICE_META: ServiceMeta[] = [
   {
-    id: TIER_DEFAULT_FARE.sunrise,
+    tier: 'sunrise',
     name: 'Sunrise Express',
     eyebrow: 'Premium · isolated inventory',
     window: '4:30 AM departure',
     description: 'Premium early departure from Banff. Reach the lakes for first light, ahead of the crowds.',
-    priceFromCents: TIER_FROM_CENTS.sunrise,
     image: '/images/locations/moraine-lake-ten-peaks.jpg',
     highlights: ['Banff → Lake Louise $79.99', 'Banff → Moraine Lake $99.98', 'Premium coach'],
   },
   {
-    id: TIER_DEFAULT_FARE.daytime,
+    tier: 'daytime',
     name: 'Daytime',
     eyebrow: 'Most popular',
     window: '7:00 AM – 5:20 PM',
     description: 'Daytime service from Banff to the lakes, plus the direct Lake Louise ⇄ Moraine connector.',
-    priceFromCents: TIER_FROM_CENTS.daytime,
     image: '/images/locations/lake-louise-lakeshore.webp',
     highlights: ['Banff → Lake Louise $65.99', 'Banff → Both Lakes $89.99 +$5 toll', 'Lake Louise ⇄ Moraine $89.99 round trip'],
   },
   {
-    id: TIER_DEFAULT_FARE.evening,
+    tier: 'evening',
     name: 'Evening Return',
     eyebrow: 'End-of-day transfer',
     window: '6:00 PM departure',
     description: 'Single late-day departure back to Banff after an afternoon at Lake Louise. Reservations recommended.',
-    priceFromCents: TIER_FROM_CENTS.evening,
     image: '/images/locations/banff.jpg',
     highlights: ['Lake Louise → Banff $65.99', 'Arrive 7:15 PM', 'Reserved seating'],
   },
 ];
 
 export default function ServiceCards() {
+  const { tierDefault, tierFrom } = useFares();
+
+  const services: Service[] = SERVICE_META.flatMap((m) => {
+    const id = tierDefault[m.tier];
+    if (!id) return [];
+    return [{ ...m, id, priceFromCents: tierFrom[m.tier] }];
+  });
+
   return (
     <ul className="mt-12 grid grid-cols-1 gap-5 lg:grid-cols-3">
-      {SERVICES.map((s) => (
+      {services.map((s) => (
         <ServiceCard key={s.id} service={s} />
       ))}
     </ul>
@@ -73,7 +86,7 @@ export default function ServiceCards() {
 function ServiceCard({ service: s }: { service: Service }) {
   const dollars = Math.floor(s.priceFromCents / 100);
   const cents = (s.priceFromCents % 100).toString().padStart(2, '0');
-  const isPremium = s.id === TIER_DEFAULT_FARE.sunrise;
+  const isPremium = s.tier === 'sunrise';
 
   return (
     <motion.li

@@ -1,8 +1,24 @@
 import React from 'react';
 import ScheduleInteractive from '@/components/ScheduleInteractive';
 import ServiceCards from '@/components/ServiceCards';
+import { getActiveFares } from '@/lib/fares-db';
+import { isSaleActive, type FareDTO } from '@/lib/fares';
 
-export default function ScheduleDashboard() {
+// Pricing shown on the marketing cards comes from the DB catalog so admin price/sale
+// edits flow through. Each card maps to a representative fare id.
+function priceProps(fare: FareDTO | undefined, nowMs: number): { priceCents: number; wasCents?: number } {
+  if (!fare) return { priceCents: 0 };
+  const onSale = isSaleActive(fare, nowMs);
+  return onSale
+    ? { priceCents: fare.salePriceCents as number, wasCents: fare.priceCents }
+    : { priceCents: fare.priceCents };
+}
+
+export default async function ScheduleDashboard() {
+  const fares = await getActiveFares().catch(() => [] as FareDTO[]);
+  const byId = new Map(fares.map((f) => [f.id, f]));
+  const nowMs = Date.now();
+
   return (
     <section id="schedule" className="mx-auto max-w-7xl px-6 py-24">
       <header className="mx-auto max-w-2xl text-center">
@@ -33,14 +49,14 @@ export default function ScheduleDashboard() {
           <PriceCard
             eyebrow="Daytime · from Banff"
             title="Banff → Lake Louise"
-            priceCents={6599}
+            {...priceProps(byId.get('banff-ll'), nowMs)}
             description="One-way daytime seat from Banff to Lake Louise. Add Moraine Lake for $89.99."
             note="Banff → Both Lakes $89.99 + $5 toll"
           />
           <PriceCard
             eyebrow="Most popular"
             title="Lake Louise ⇄ Moraine"
-            priceCents={8999}
+            {...priceProps(byId.get('ll-moraine'), nowMs)}
             description="Direct shuttle between Lake Louise and Moraine Lake — one ticket covers both directions."
             note="Round trip — there and back"
             accent
@@ -48,7 +64,7 @@ export default function ScheduleDashboard() {
           <PriceCard
             eyebrow="Premium · Sunrise"
             title="Sunrise Express"
-            priceCents={7999}
+            {...priceProps(byId.get('sunrise-banff-ll'), nowMs)}
             description="Premium 4:30 AM departure from Banff. Banff → Lake Louise $79.99, Banff → Moraine Lake $99.98."
             note="Beat the crowds at first light"
             primary

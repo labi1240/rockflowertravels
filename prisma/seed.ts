@@ -23,6 +23,17 @@ const PRICES = {
   EVENING_LL_BANFF: 6599,             // $65.99 — Evening Return (assumed, see fares.ts)
 };
 
+// Fare catalog — verbatim copy of the historical src/lib/fares.ts FARES map, now the
+// DB source of truth. Seeded idempotently (upsert by id) so the cutover is price-neutral.
+const FARE_SEED = [
+  { id: "sunrise-banff-moraine", tier: "sunrise", routeKind: "SUNRISE_EXPRESS", routeSlug: "sunrise-express", label: "Banff → Moraine Lake (Sunrise Express)", short: "Sunrise · Banff → Moraine",        origin: "Banff",       destination: "Moraine Lake",               priceCents: 9998, tollCents: 0,   roundTrip: false, premium: true,  defaultTime: "4:30 AM", note: "Premium direct departure — first light at Moraine Lake.", sortOrder: 1 },
+  { id: "sunrise-banff-ll",      tier: "sunrise", routeKind: "SUNRISE_EXPRESS", routeSlug: "sunrise-express", label: "Banff → Lake Louise (Sunrise Express)", short: "Sunrise · Banff → Lake Louise",   origin: "Banff",       destination: "Lake Louise",                priceCents: 7999, tollCents: 0,   roundTrip: false, premium: true,  defaultTime: "4:30 AM", note: "Premium early departure to Lake Louise.",               sortOrder: 2 },
+  { id: "banff-ll",              tier: "daytime", routeKind: "DAYTIME_CIRCUIT", routeSlug: "daytime-circuit", label: "Banff → Lake Louise",                  short: "Banff → Lake Louise",            origin: "Banff",       destination: "Lake Louise",                priceCents: 6599, tollCents: 0,   roundTrip: false, premium: false, defaultTime: "7:00 AM", note: null,                                                    sortOrder: 3 },
+  { id: "banff-ll-moraine",      tier: "daytime", routeKind: "DAYTIME_CIRCUIT", routeSlug: "daytime-circuit", label: "Banff → Lake Louise + Moraine Lake",   short: "Banff → Both Lakes",             origin: "Banff",       destination: "Lake Louise & Moraine Lake", priceCents: 8999, tollCents: 500, roundTrip: false, premium: false, defaultTime: "7:00 AM", note: "Visits both lakes. +$5 Moraine Lake toll per guest, plus GST.", sortOrder: 4 },
+  { id: "ll-moraine",            tier: "daytime", routeKind: "DAYTIME_CIRCUIT", routeSlug: "daytime-circuit", label: "Lake Louise ⇄ Moraine Lake (round trip)", short: "Lake Louise ⇄ Moraine",       origin: "Lake Louise", destination: "Moraine Lake",               priceCents: 8999, tollCents: 0,   roundTrip: true,  premium: false, defaultTime: "7:00 AM", note: "Direct shuttle — one ticket covers both directions (there and back).", sortOrder: 5 },
+  { id: "evening-ll-banff",      tier: "evening", routeKind: "EVENING_RETURN",  routeSlug: "evening-return",  label: "Lake Louise → Banff (Evening Return)", short: "Evening · Lake Louise → Banff",   origin: "Lake Louise", destination: "Banff",                      priceCents: 6599, tollCents: 0,   roundTrip: false, premium: false, defaultTime: "6:00 PM", note: "End-of-day transfer back to Banff.",                    sortOrder: 6 },
+] as const;
+
 async function main() {
   // ── Stops ────────────────────────────────────────────────────────────────────
   const stops = await Promise.all(
@@ -38,35 +49,53 @@ async function main() {
   const byCode = Object.fromEntries(stops.map((s) => [s.code, s.id]));
 
   // ── Routes ───────────────────────────────────────────────────────────────────
+  // Backfill slug/tier onto any pre-existing routes (created before slug existed),
+  // matched by their legacy `kind`, so the slug-keyed upserts below update — not duplicate.
+  const slugByKind: Array<[RouteKind, string, string]> = [
+    [RouteKind.SUNRISE_EXPRESS, "sunrise-express", "sunrise"],
+    [RouteKind.DAYTIME_CIRCUIT, "daytime-circuit", "daytime"],
+    [RouteKind.EVENING_RETURN, "evening-return", "evening"],
+  ];
+  for (const [kind, slug, tier] of slugByKind) {
+    await prisma.route.updateMany({ where: { kind, slug: null }, data: { slug, tier } });
+  }
+
+  // Routes are keyed by `slug` (stable identity). `kind` is kept as a legacy tag.
   const sunrise = await prisma.route.upsert({
-    where: { kind: RouteKind.SUNRISE_EXPRESS },
+    where: { slug: "sunrise-express" },
     create: {
+      slug: "sunrise-express",
+      tier: "sunrise",
       kind: RouteKind.SUNRISE_EXPRESS,
       displayName: "Sunrise Express",
       isPremium: true,
       description: "Premium 4:30 AM departure from Banff direct to Moraine Lake.",
     },
-    update: {},
+    update: { tier: "sunrise", kind: RouteKind.SUNRISE_EXPRESS },
   });
   const daytime = await prisma.route.upsert({
-    where: { kind: RouteKind.DAYTIME_CIRCUIT },
+    where: { slug: "daytime-circuit" },
     create: {
+      slug: "daytime-circuit",
+      tier: "daytime",
       kind: RouteKind.DAYTIME_CIRCUIT,
       displayName: "Daytime Circuit",
       isPremium: false,
       description: "Repeating loop: Samson Mall → Lake Louise Lakeshore → Moraine Lake → Samson Mall.",
     },
-    update: {},
+    update: { tier: "daytime", kind: RouteKind.DAYTIME_CIRCUIT },
   });
   const evening = await prisma.route.upsert({
-    where: { kind: RouteKind.EVENING_RETURN },
+    where: { slug: "evening-return" },
     create: {
+      slug: "evening-return",
+      tier: "evening",
       kind: RouteKind.EVENING_RETURN,
       displayName: "Evening Return",
       isPremium: false,
       description: "6:00 PM service from Lake Louise Lakeshore back to Banff.",
     },
-    update: {},
+    update: { tier: "evening", kind: RouteKind.EVENING_RETURN },
   });
 
   // ── Sunrise Express template ─────────────────────────────────────────────────
@@ -129,7 +158,13 @@ async function main() {
     });
   }
 
-  console.log("Seed complete: stops, routes, schedule templates, vehicles.");
+  // ── Fare catalog ─────────────────────────────────────────────────────────────
+  for (const fare of FARE_SEED) {
+    const data = { ...fare, note: fare.note ?? null };
+    await prisma.fare.upsert({ where: { id: fare.id }, create: data, update: data });
+  }
+
+  console.log("Seed complete: stops, routes, schedule templates, vehicles, fares.");
 }
 
 type LegInput = {

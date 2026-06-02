@@ -39,6 +39,7 @@ interface BookingRow {
   reference: string;
   status: BookingStatus;
   routeKind: RouteKind | null;
+  routeName: string | null;
   serviceDate: Date | null;
   departureTime: string | null;
   totalCents: number;
@@ -57,6 +58,7 @@ export default async function MyTripsPage() {
       reference: true,
       status: true,
       routeKind: true,
+      routeName: true,
       serviceDate: true,
       departureTime: true,
       totalCents: true,
@@ -156,7 +158,7 @@ function BookingList({
               >
                 <div className="flex-1 min-w-0">
                   <div className="mb-2 flex flex-wrap items-center gap-2">
-                    {b.routeKind && (
+                    {b.routeKind ? (
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
                           ROUTE_DISPLAY[b.routeKind].tone
@@ -164,7 +166,11 @@ function BookingList({
                       >
                         {ROUTE_DISPLAY[b.routeKind].name}
                       </span>
-                    )}
+                    ) : b.routeName ? (
+                      <span className="inline-flex items-center rounded-full bg-evergreen-100 px-2.5 py-1 text-xs font-semibold text-evergreen-800 ring-1 ring-evergreen-500/20">
+                        {b.routeName}
+                      </span>
+                    ) : null}
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
                         STATUS_DISPLAY[b.status].tone

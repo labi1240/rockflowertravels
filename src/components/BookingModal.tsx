@@ -7,14 +7,15 @@ import { motion, AnimatePresence } from 'motion/react';
 import { getStripe } from '@/lib/stripe-client';
 import { useBookingModal } from '@/store/booking-modal';
 import {
-  FARES,
-  FARES_BY_TIER,
   TIERS,
   formatCents,
   isFareId,
+  isSaleActive,
+  effectiveUnitPrice,
   quote,
   type FareId,
 } from '@/lib/fares';
+import { useFares } from '@/components/FaresProvider';
 
 const DAYTIME_TIMES: { value: string; label: string }[] = [
   { value: '7:00 AM',  label: '7:00 AM — Circuit 1' },
@@ -56,26 +57,36 @@ export default function BookingModal() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>('');
 
+  const { fares, byTier, nowMs, getFare } = useFares();
+
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!isOpen) return;
-    if (isFareId(initialRoute)) {
-      setRoute(initialRoute);
-      setTime(FARES[initialRoute].defaultTime);
+    const target = isFareId(initialRoute) && getFare(initialRoute) ? initialRoute : null;
+    if (target) {
+      setRoute(target);
+      setTime(getFare(target)!.defaultTime);
     }
     if (initialDate) setDate(initialDate);
     if (typeof initialPassengers === 'number' && initialPassengers >= 1 && initialPassengers <= 8) {
       setPassengers(initialPassengers);
     }
-  }, [initialRoute, initialDate, initialPassengers, isOpen]);
+  }, [initialRoute, initialDate, initialPassengers, isOpen, getFare]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const fare = FARES[route];
-  const q = quote(route, passengers);
-  const fareSubtotal = q.fareCents / 100; // base fare × passengers
-  const toll = q.tollCents / 100; // Moraine toll × passengers
-  const tax = q.gstCents / 100;
-  const total = q.totalCents / 100;
+  // Resolve the selected fare from the DB-backed catalog, falling back to the first fare
+  // if the stored id is missing (e.g. a deactivated/removed fare).
+  const fare = getFare(route) ?? fares[0];
+  const q = fare ? quote(fare, passengers, nowMs) : null;
+  const fareSubtotal = (q?.fareCents ?? 0) / 100; // effective fare × passengers
+  const toll = (q?.tollCents ?? 0) / 100; // Moraine toll × passengers
+  const tax = (q?.gstCents ?? 0) / 100;
+  const total = (q?.totalCents ?? 0) / 100;
+  const onSale = q?.onSale ?? false;
+  const perSeat = (q?.unitPriceCents ?? fare?.priceCents ?? 0) / 100;
+  const originalPerSeat = (fare?.priceCents ?? 0) / 100;
+  const timeOptions =
+    TIME_OPTIONS[route] ?? (fare ? [{ value: fare.defaultTime, label: fare.defaultTime }] : []);
 
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,7 +136,8 @@ export default function BookingModal() {
 
   const handleRouteChange = (next: FareId) => {
     setRoute(next);
-    setTime(FARES[next].defaultTime);
+    const f = getFare(next);
+    if (f) setTime(f.defaultTime);
   };
 
   return (
@@ -178,12 +190,17 @@ export default function BookingModal() {
                       <Select id="modal-route" value={route} onChange={(v) => handleRouteChange(v as FareId)}>
                         {TIERS.map((tier) => (
                           <optgroup key={tier.key} label={tier.label}>
-                            {FARES_BY_TIER[tier.key].map((f) => (
-                              <option key={f.id} value={f.id}>
-                                {f.label} — {formatCents(f.priceCents)}
-                                {f.tollCents > 0 ? ` +${formatCents(f.tollCents)} toll` : ''}
-                              </option>
-                            ))}
+                            {byTier[tier.key].map((f) => {
+                              const eff = effectiveUnitPrice(f, nowMs);
+                              const sale = isSaleActive(f, nowMs);
+                              return (
+                                <option key={f.id} value={f.id}>
+                                  {f.label} — {formatCents(eff)}
+                                  {sale ? ` (was ${formatCents(f.priceCents)})` : ''}
+                                  {f.tollCents > 0 ? ` +${formatCents(f.tollCents)} toll` : ''}
+                                </option>
+                              );
+                            })}
                           </optgroup>
                         ))}
                       </Select>
@@ -211,7 +228,7 @@ export default function BookingModal() {
 
                     <Field label="Departure time" htmlFor="modal-time">
                       <Select id="modal-time" value={time} onChange={setTime}>
-                        {TIME_OPTIONS[route].map((opt) => (
+                        {timeOptions.map((opt) => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </Select>
@@ -322,10 +339,12 @@ export default function BookingModal() {
 
             {/* Trip summary column */}
             <TripSummary
-              routeName={fare.label}
-              perSeat={fare.priceCents / 100}
-              tollPerSeat={fare.tollCents / 100}
-              note={fare.note}
+              routeName={fare?.label ?? '—'}
+              perSeat={perSeat}
+              originalPerSeat={originalPerSeat}
+              onSale={onSale}
+              tollPerSeat={(fare?.tollCents ?? 0) / 100}
+              note={fare?.note ?? undefined}
               date={date}
               time={time}
               passengers={passengers}
@@ -357,7 +376,7 @@ export default function BookingModal() {
             <div className="mx-auto mt-7 max-w-md">
               <BoardingPass
                 name={name}
-                routeName={fare.label}
+                routeName={fare?.label ?? '—'}
                 date={date}
                 time={time}
                 passengers={passengers}
@@ -400,10 +419,12 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
 }
 
 function TripSummary({
-  routeName, perSeat, tollPerSeat, note, date, time, passengers, fareSubtotal, toll, tax, total,
+  routeName, perSeat, originalPerSeat, onSale, tollPerSeat, note, date, time, passengers, fareSubtotal, toll, tax, total,
 }: {
   routeName: string;
   perSeat: number;
+  originalPerSeat: number;
+  onSale: boolean;
   tollPerSeat: number;
   note?: string;
   date: string;
@@ -439,7 +460,19 @@ function TripSummary({
           <SummaryCell label="Date" value={date} />
           <SummaryCell label="Departs" value={time || '—'} highlight />
           <SummaryCell label="Passengers" value={`${passengers}`} />
-          <SummaryCell label="Per seat" value={`$${perSeat.toFixed(2)}`} />
+          <div>
+            <p className="font-display text-sm font-bold leading-snug text-mist-900">
+              ${perSeat.toFixed(2)}
+              {onSale && (
+                <span className="ml-1.5 text-[11px] font-semibold text-mist-400 line-through">
+                  ${originalPerSeat.toFixed(2)}
+                </span>
+              )}
+            </p>
+            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-mist-500">
+              Per seat{onSale ? ' · Sale' : ''}
+            </p>
+          </div>
         </div>
 
         <div className="rounded-2xl bg-white p-4 ring-1 ring-mist-200">
