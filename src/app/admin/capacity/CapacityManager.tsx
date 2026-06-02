@@ -31,8 +31,8 @@ export default function CapacityManager({
     <div className="space-y-6">
       <AddForm routes={routes} todayISO={todayISO} />
 
-      <div className="overflow-hidden rounded-2xl border border-mist-200 bg-white shadow-[var(--shadow-card)]">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-mist-200 bg-white shadow-[var(--shadow-card)]">
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-mist-200 text-left text-xs font-semibold uppercase tracking-wider text-mist-500">
               <th className="px-4 py-3">Route</th>
@@ -94,6 +94,7 @@ function Row({ row }: { row: CapacityRow }) {
             type="number"
             min="0"
             max="200"
+            aria-label="Capacity (seats)"
             value={seats}
             onChange={(e) => setSeats(e.target.value)}
             className={`w-20 ${INPUT}`}
@@ -143,32 +144,32 @@ function AddForm({ routes, todayISO }: { routes: RouteOption[]; todayISO: string
       <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-evergreen-700">
         Set / add departure capacity
       </h3>
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <label className="flex w-full flex-col gap-1 sm:w-auto">
           <span className="text-xs font-semibold uppercase tracking-wider text-mist-500">Route</span>
-          <select value={routeSlug} onChange={(e) => setRouteSlug(e.target.value)} className={INPUT}>
+          <select value={routeSlug} onChange={(e) => setRouteSlug(e.target.value)} className={`w-full sm:w-auto ${INPUT}`}>
             {routes.map((r) => (
               <option key={r.slug} value={r.slug}>{r.displayName}</option>
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1">
+        <label className="flex w-full flex-col gap-1 sm:w-auto">
           <span className="text-xs font-semibold uppercase tracking-wider text-mist-500">Date</span>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={INPUT} />
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={`w-full sm:w-auto ${INPUT}`} />
         </label>
-        <label className="flex flex-col gap-1">
+        <label className="flex w-full flex-col gap-1 sm:w-auto">
           <span className="text-xs font-semibold uppercase tracking-wider text-mist-500">Departure time</span>
-          <input value={time} onChange={(e) => setTime(e.target.value)} placeholder="7:00 AM" className={INPUT} />
+          <input value={time} onChange={(e) => setTime(e.target.value)} placeholder="7:00 AM" className={`w-full sm:w-auto ${INPUT}`} />
         </label>
-        <label className="flex flex-col gap-1">
+        <label className="flex w-full flex-col gap-1 sm:w-auto">
           <span className="text-xs font-semibold uppercase tracking-wider text-mist-500">Seats</span>
-          <input type="number" min="0" max="200" value={seats} onChange={(e) => setSeats(e.target.value)} className={`w-24 ${INPUT}`} />
+          <input type="number" min="0" max="200" value={seats} onChange={(e) => setSeats(e.target.value)} className={`w-full sm:w-24 ${INPUT}`} />
         </label>
         <button
           type="button"
           onClick={add}
           disabled={pending}
-          className="rounded-lg bg-evergreen-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-evergreen-900 disabled:opacity-60"
+          className="w-full rounded-lg bg-evergreen-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-evergreen-900 disabled:opacity-60 sm:w-auto sm:py-2"
         >
           {pending ? 'Saving…' : 'Save'}
         </button>

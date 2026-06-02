@@ -56,7 +56,11 @@ export interface FarePricing {
   saleEndsMs: number | null;
 }
 
-/** True when a sale price is set and `nowMs` is within the (optional) sale window. */
+/**
+ * True when a sale price is set and `nowMs` is within the (optional) sale window.
+ * Both bounds are inclusive: the sale is active at exactly `saleStartsMs` and remains
+ * active through `saleEndsMs` (the last active millisecond is `saleEndsMs` itself).
+ */
 export function isSaleActive(fare: FarePricing, nowMs: number): boolean {
   if (fare.salePriceCents == null) return false;
   if (fare.saleStartsMs != null && nowMs < fare.saleStartsMs) return false;

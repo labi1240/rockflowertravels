@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
 import { useBookingModal } from '@/store/booking-modal';
 
@@ -15,6 +16,7 @@ const TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
 export default function Navbar() {
   const [mountainTime, setMountainTime] = useState<string>('');
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { isLoaded, isSignedIn } = useUser();
   const openBooking = useBookingModal((s) => s.open);
 
@@ -32,16 +34,26 @@ export default function Navbar() {
     };
   }, []);
 
+  // Lock body scroll while the mobile menu is open so the page behind doesn't move.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen]);
+
   return (
     <header className={`fixed w-full top-0 z-50 transition-all duration-500 ${
       scrolled 
         ? 'border-b border-mist-200 bg-mist-50/80 shadow-[var(--shadow-card)] backdrop-blur-2xl backdrop-saturate-200 py-1'
         : 'border-transparent bg-transparent py-4'
     }`}>
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6">
-        <a 
-          href="#" 
-          className="group flex items-center transition-transform hover:scale-[1.02] active:scale-95" 
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 sm:gap-6 sm:px-6">
+        <Link
+          href="/"
+          className="group flex items-center transition-transform hover:scale-[1.02] active:scale-95"
           aria-label="Rock Flower Travels Inc. — home"
         >
           {/* Hero is cream now, so the bar sits on a light surface in both states — dark logo throughout. */}
@@ -51,14 +63,14 @@ export default function Navbar() {
             width={400}
             height={195}
             priority
-            className="h-12 w-auto drop-shadow-md transition-all duration-300 group-hover:drop-shadow-lg"
+            className="h-10 w-auto drop-shadow-md transition-all duration-300 group-hover:drop-shadow-lg sm:h-12"
           />
-        </a>
+        </Link>
 
         <nav className="hidden items-center rounded-full border border-mist-200 bg-mist-100 px-2 py-1.5 shadow-inner md:flex md:gap-1">
-          <NavLink href="#schedule">Schedules</NavLink>
-          <NavLink href="#tracker">Live Tracker</NavLink>
-          <NavLink href="#map">Route Map</NavLink>
+          <NavLink href="/#schedule">Schedules</NavLink>
+          <NavLink href="/#tracker">Live Tracker</NavLink>
+          <NavLink href="/#map">Route Map</NavLink>
         </nav>
 
         <div className="flex items-center gap-3">
@@ -76,25 +88,30 @@ export default function Navbar() {
             <div className="h-9 w-24 animate-pulse rounded-full bg-mist-200" />
           ) : isSignedIn ? (
             <>
-              <a
+              <Link
                 href="/my-trips"
                 className="hidden rounded-full px-4 py-2 text-sm font-medium text-mist-700 transition-all hover:bg-mist-100 hover:text-evergreen-700 sm:inline-flex"
               >
                 My Trips
-              </a>
-              <div className="rounded-full ring-2 ring-mist-200 transition-all hover:ring-sunrise-400/50 p-0.5">
-                <UserButton appearance={{ elements: { avatarBox: 'size-8' } }} />
-              </div>
+              </Link>
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox:
+                      'size-9 rounded-full ring-2 ring-mist-200 transition-all hover:ring-sunrise-400/50',
+                  },
+                }}
+              />
             </>
           ) : (
             <div className="flex items-center gap-1">
               <SignInButton mode="modal">
-                <button className="rounded-full px-4 py-2 text-sm font-medium text-mist-700 transition-all hover:bg-mist-100 hover:text-evergreen-700 active:scale-95">
+                <button type="button" className="hidden rounded-full px-4 py-2 text-sm font-medium text-mist-700 transition-all hover:bg-mist-100 hover:text-evergreen-700 active:scale-95 sm:inline-flex">
                   Sign in
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="rounded-full border border-mist-200 bg-white px-4 py-2 text-sm font-medium text-mist-900 shadow-sm backdrop-blur-md transition-all hover:bg-mist-100 hover:border-mist-300 active:scale-95">
+                <button type="button" className="rounded-full border border-mist-200 bg-white px-4 py-2 text-sm font-medium text-mist-900 shadow-sm backdrop-blur-md transition-all hover:bg-mist-100 hover:border-mist-300 active:scale-95">
                   Sign up
                 </button>
               </SignUpButton>
@@ -109,19 +126,88 @@ export default function Navbar() {
             <span className="font-semibold uppercase tracking-widest text-mist-500 transition-colors group-hover:text-mist-700">Banff</span>
             <span className="font-display font-bold tabular-nums text-mist-900">{mountainTime || '—:—'}</span>
           </div>
+
+          {/* Mobile menu toggle — only the hamburger shows below md; the nav + CTA live in the drawer. */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            className="inline-flex size-10 items-center justify-center rounded-full border border-mist-200 bg-mist-100 text-mist-900 transition-colors hover:bg-mist-200 active:scale-95 md:hidden"
+          >
+            {menuOpen ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                <path d="M3 6h18M3 12h18M3 18h18" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
+
+      {/* Mobile drawer */}
+      {menuOpen && (
+        <div className="md:hidden">
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setMenuOpen(false)}
+            className="fixed inset-0 z-40 bg-evergreen-950/20 backdrop-blur-sm"
+          />
+          <nav className="absolute inset-x-0 top-full z-50 mx-3 mt-2 flex flex-col gap-1 rounded-2xl border border-mist-200 bg-mist-50/95 p-3 shadow-[var(--shadow-card)] backdrop-blur-2xl">
+            <MobileLink href="/#schedule" onClick={() => setMenuOpen(false)}>Schedules</MobileLink>
+            <MobileLink href="/#tracker" onClick={() => setMenuOpen(false)}>Live Tracker</MobileLink>
+            <MobileLink href="/#map" onClick={() => setMenuOpen(false)}>Route Map</MobileLink>
+            {isSignedIn && (
+              <MobileLink href="/my-trips" onClick={() => setMenuOpen(false)}>My Trips</MobileLink>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                openBooking();
+              }}
+              className="mt-1 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-sunrise-400 to-sunrise-500 px-5 py-3 text-sm font-bold text-evergreen-950 shadow-[0_0_15px_hsla(41,80%,58%,0.3)] transition-all active:scale-95"
+            >
+              Book Shuttle
+            </button>
+          </nav>
+        </div>
+      )}
     </header>
+  );
+}
+
+function MobileLink({
+  href,
+  onClick,
+  children,
+}: {
+  href: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="rounded-xl px-4 py-3 text-base font-semibold text-mist-800 transition-colors hover:bg-mist-100 hover:text-evergreen-700 active:scale-[0.98]"
+    >
+      {children}
+    </Link>
   );
 }
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <a
+    <Link
       href={href}
       className="relative rounded-full px-4 py-2 text-sm font-medium text-mist-700 transition-all duration-300 hover:text-evergreen-700 hover:bg-mist-100 active:scale-95"
     >
       {children}
-    </a>
+    </Link>
   );
 }

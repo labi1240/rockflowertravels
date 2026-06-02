@@ -1,10 +1,13 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy · RockFlower Travels',
+  title: 'Privacy Policy',
   description:
     'How RockFlower Travels Inc. collects, uses, and protects your personal information when you book and travel with our shuttle service.',
+  alternates: { canonical: '/privacy-policy' },
 };
 
 const EFFECTIVE_DATE = 'May 23, 2026';
@@ -13,12 +16,15 @@ const COMPANY = 'RockFlower Travels Inc.';
 
 export default function PrivacyPolicyPage() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 pb-24 pt-16 sm:pt-24">
+    <>
+      <Navbar />
+
+      <main className="main-content mx-auto w-full max-w-3xl px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-36">
       <header className="border-b border-mist-200 pb-8">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-evergreen-700">
           Legal
         </p>
-        <h1 className="mt-2 font-display text-4xl font-extrabold tracking-tight text-mist-900 sm:text-5xl">
+        <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-mist-900 sm:text-4xl lg:text-5xl">
           Privacy Policy
         </h1>
         <p className="mt-3 text-sm text-mist-500">
@@ -159,7 +165,10 @@ export default function PrivacyPolicyPage() {
           ← Back to home
         </Link>
       </div>
-    </main>
+      </main>
+
+      <Footer />
+    </>
   );
 }
 

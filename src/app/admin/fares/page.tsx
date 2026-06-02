@@ -26,8 +26,8 @@ export default async function AdminFaresPage() {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-mist-200 bg-white shadow-[var(--shadow-card)]">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-mist-200 bg-white shadow-[var(--shadow-card)]">
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b border-mist-200 text-left text-xs font-semibold uppercase tracking-wider text-mist-500">
               <th className="px-4 py-3">Fare</th>
@@ -51,10 +51,10 @@ export default async function AdminFaresPage() {
                   </td>
                   <td className="px-4 py-3 text-mist-700">{TIER_LABEL[f.tier]}</td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {onSale ? (
+                    {onSale && f.salePriceCents != null ? (
                       <span>
                         <span className="font-semibold text-rose-700">
-                          {formatCents(f.salePriceCents as number)}
+                          {formatCents(f.salePriceCents)}
                         </span>
                         <span className="ml-1.5 text-xs text-mist-400 line-through">
                           {formatCents(f.priceCents)}

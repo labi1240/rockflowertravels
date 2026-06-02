@@ -36,6 +36,7 @@ export function FaresProvider({
     const byTier = { sunrise: [], daytime: [], evening: [] } as Record<FareTier, FareDTO[]>;
     for (const fare of fares) {
       if (byTier[fare.tier]) byTier[fare.tier].push(fare);
+      else console.warn(`[FaresProvider] fare "${fare.id}" has unexpected tier "${fare.tier}" — skipped.`);
     }
 
     const tierFrom = {} as Record<FareTier, number>;

@@ -20,12 +20,11 @@ export interface AdminIdentity {
   name: string;
 }
 
-function adminEmailAllowlist(): string[] {
-  return (process.env.ADMIN_EMAILS ?? '')
-    .split(',')
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-}
+// Parsed once at module load — the env var doesn't change at runtime.
+const ADMIN_EMAIL_ALLOWLIST: string[] = (process.env.ADMIN_EMAILS ?? '')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
 
 /** Returns the admin identity, or null when the current user is not an admin. */
 export async function getAdminIdentity(): Promise<AdminIdentity | null> {
@@ -36,7 +35,7 @@ export async function getAdminIdentity(): Promise<AdminIdentity | null> {
   const role = (user.publicMetadata as { role?: string } | null)?.role;
 
   const isAdmin =
-    role === 'admin' || (email !== '' && adminEmailAllowlist().includes(email));
+    role === 'admin' || (email !== '' && ADMIN_EMAIL_ALLOWLIST.includes(email));
   if (!isAdmin) return null;
 
   return {

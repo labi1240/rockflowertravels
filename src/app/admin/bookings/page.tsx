@@ -144,8 +144,8 @@ export default async function AdminBookingsPage({ searchParams }: PageProps) {
           No bookings match these filters.
         </p>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-mist-200 bg-white shadow-[var(--shadow-card)]">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-2xl border border-mist-200 bg-white shadow-[var(--shadow-card)]">
+          <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-mist-200 text-left text-xs font-semibold uppercase tracking-wider text-mist-500">
                 <th className="px-4 py-3">Reference</th>

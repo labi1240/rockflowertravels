@@ -91,11 +91,11 @@ export async function POST(req: NextRequest) {
     const routeSlug = fare.routeSlug ?? null;
     let routeName = fare.short || fare.label;
     if (routeSlug) {
-      const route = await prisma.route.findUnique({
+      const dbRoute = await prisma.route.findUnique({
         where: { slug: routeSlug },
         select: { displayName: true },
       });
-      if (route) routeName = route.displayName;
+      if (dbRoute) routeName = dbRoute.displayName;
     }
 
     const [firstName, ...rest] = name.split(/\s+/);

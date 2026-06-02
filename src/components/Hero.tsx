@@ -27,7 +27,7 @@ export default function Hero() {
       <div className="absolute inset-0 -z-10 bg-gradient-to-r from-mist-50 via-mist-50/85 to-mist-50/25" />
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-mist-50/60 via-transparent to-mist-50" />
 
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-32 pt-20 md:pb-40 md:pt-28 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 lg:pb-48 lg:pt-32">
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-4 pb-20 pt-24 sm:gap-12 sm:px-6 sm:pb-28 sm:pt-28 md:pb-40 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 lg:pb-48 lg:pt-32">
         {/* Left — narrative */}
         <motion.div 
           initial="hidden" 
